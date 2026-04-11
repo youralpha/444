@@ -731,6 +731,13 @@
             });
         }
 
+        function promptDeleteAnyTask(taskId) {
+            showConfirmModal("Удаление", "Удалить этот протокол из цикла навсегда?", () => {
+                state.cycles.forEach(c => c.tasks = c.tasks.filter(t => t.id !== taskId));
+                saveState(); updateFullUI(); showToast("Протокол удален");
+            });
+        }
+
         // CUSTOM TASK
         let customFieldsCounter = 0;
 
@@ -1011,6 +1018,7 @@
                         <span onclick="openTaskModal('${t.id}')" class="text-sm ${done ? 'line-through text-gray-500' : 'text-gray-200'} flex-1 cursor-pointer">${t.text}</span>
                         <span class="text-[10px] font-mono text-gray-500">${t.time}</span>
                         ${isCustom ? `<button onclick="openCustomTaskModal('${c.id}', '${t.id}')" class="text-gray-500 hover:text-tactical-accent p-1" title="Редактировать">⚙️</button>` : ''}
+                        <button onclick="promptDeleteAnyTask('${t.id}')" class="text-gray-500 hover:text-red-500 p-1" title="Удалить">🗑️</button>
                     </div>`;
                 });
                 h += `</div><button onclick="openCustomTaskModal('${c.id}')" class="w-full mt-3 py-1 text-[10px] text-gray-500 border border-dashed border-gray-700 hover:text-tactical-accent transition-colors">+ ДОБАВИТЬ ПРОТОКОЛ</button>`;
