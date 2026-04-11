@@ -38,6 +38,16 @@
     <!-- Шапка -->
     <header class="bg-white shadow-sm sticky top-0 z-10">
         <div class="max-w-3xl mx-auto px-4 py-4">
+            <!-- На главную -->
+            <div class="w-full mb-4">
+                <a href="/" class="text-slate-400 hover:text-slate-600 transition-colors text-sm font-medium flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    На главную
+                </a>
+            </div>
+
             <div class="flex justify-between items-center mb-4">
                 <h1 class="text-xl font-bold flex items-center gap-2 text-brand-600">
                     <i data-lucide="brain-circuit" class="w-6 h-6"></i> КПТ Протокол
@@ -272,8 +282,17 @@
         const todayDate = new Date().toISOString().split('T')[0];
 
         // Инициализация
-        function init() {
-            const saved = localStorage.getItem('cbtAppVanillaData');
+        async function init() {
+            let saved = null;
+            try {
+                const response = await fetch('/api/data/kpt');
+                if (response.ok) {
+                    const parsed = await response.json();
+                    if (Object.keys(parsed).length > 0) {
+                        saved = JSON.stringify(parsed);
+                    }
+                }
+            } catch (e) { console.error('Failed to load data', e); }
             if (saved) {
                 const parsed = JSON.parse(saved);
                 state = { ...state, ...parsed };
@@ -293,8 +312,8 @@
             render();
         }
 
-        function saveToMemory() {
-            localStorage.setItem('cbtAppVanillaData', JSON.stringify({
+        async function saveToMemory() {
+            const dataToSave = {
                 currentWeek: state.currentWeek,
                 xp: state.xp,
                 level: state.level,
@@ -302,7 +321,16 @@
                 taskData: state.taskData,
                 readingHistory: state.readingHistory,
                 maxPageReached: state.maxPageReached
-            }));
+            };
+            try {
+                await fetch('/api/data/kpt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dataToSave)
+                });
+            } catch (e) {
+                console.error("Failed to save data", e);
+            }
         }
 
         function updateState(newState) {
@@ -633,7 +661,7 @@
             }
         }
 
-        init();
+        window.onload = init;
     </script>
 </body>
 </html>
