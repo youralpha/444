@@ -295,9 +295,10 @@
 
     <div id="custom-task-modal" class="hidden fixed inset-0 z-[80] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeCustomTaskModal()"></div>
-        <div class="relative bg-tactical-800 border border-tactical-700 rounded-sm w-full max-w-md p-6 shadow-2xl modal-content">
-            <h3 class="text-xl font-bold text-white uppercase mb-4 border-b border-tactical-700 pb-2">Новый протокол</h3>
-            <div class="space-y-4">
+        <div class="relative bg-tactical-800 border border-tactical-700 rounded-sm w-full max-w-lg p-6 shadow-2xl modal-content max-h-[90vh] flex flex-col">
+            <h3 id="ct-modal-title" class="text-xl font-bold text-white uppercase mb-4 border-b border-tactical-700 pb-2 flex-shrink-0">Новый протокол</h3>
+            <div class="space-y-4 overflow-y-auto custom-scrollbar pr-2 flex-1">
+                <input type="hidden" id="ct-task-id">
                 <div><label class="text-xs font-bold text-gray-400 uppercase">Цикл</label>
                     <select id="ct-cycle" class="w-full bg-tactical-900 border border-tactical-700 rounded p-2 text-white outline-none">
                         <option value="daily">Ежедневно</option><option value="weekly">Еженедельно</option><option value="monthly">Ежемесячно</option><option value="quarterly">Ежеквартально</option>
@@ -310,12 +311,20 @@
                     <input type="text" id="ct-time" class="w-full bg-tactical-900 border border-tactical-700 rounded p-2 text-white outline-none">
                 </div>
                 <div><label class="text-xs font-bold text-gray-400 uppercase">Описание</label>
-                    <textarea id="ct-desc" rows="3" class="w-full bg-tactical-900 border border-tactical-700 rounded p-2 text-white outline-none custom-scrollbar"></textarea>
+                    <textarea id="ct-desc" rows="2" class="w-full bg-tactical-900 border border-tactical-700 rounded p-2 text-white outline-none custom-scrollbar"></textarea>
+                </div>
+
+                <div class="border-t border-tactical-700 pt-4 mt-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs font-bold text-tactical-accent uppercase tracking-widest">Кастомные поля (Форма)</label>
+                        <button type="button" onclick="addCustomFieldRow()" class="text-xs bg-tactical-900 border border-tactical-700 hover:border-tactical-accent text-tactical-accent px-2 py-1 rounded">+ Поле</button>
+                    </div>
+                    <div id="ct-fields-container" class="space-y-2"></div>
                 </div>
             </div>
-            <div class="flex justify-end gap-3 mt-6">
+            <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-tactical-700 flex-shrink-0">
                 <button onclick="closeCustomTaskModal()" class="px-4 py-2 rounded text-sm text-gray-300 hover:bg-tactical-700 transition-colors">Отмена</button>
-                <button onclick="saveCustomTask()" class="px-6 py-2 rounded text-sm bg-tactical-accent text-tactical-900 font-bold hover:bg-emerald-400 transition-colors">Добавить</button>
+                <button onclick="saveCustomTask()" class="px-6 py-2 rounded text-sm bg-tactical-accent text-tactical-900 font-bold hover:bg-emerald-400 transition-colors">Сохранить</button>
             </div>
         </div>
     </div>
@@ -671,6 +680,15 @@
                 inp.value = data[f.id] || ''; inp.id = "field-" + f.id;
                 div.appendChild(inp); form.appendChild(div);
             });
+
+            // Кнопка удаления только для кастомных задач
+            const deleteBtn = document.getElementById('btn-delete-task');
+            if (tid.startsWith('c')) {
+                deleteBtn.classList.remove('hidden');
+            } else {
+                deleteBtn.classList.add('hidden');
+            }
+
             document.getElementById('modal-container').classList.remove('hidden');
         }
 
@@ -714,27 +732,140 @@
         }
 
         // CUSTOM TASK
-        function openCustomTaskModal(cid) {
-            document.getElementById('ct-cycle').value = cid;
-            document.getElementById('ct-title').value = '';
+        let customFieldsCounter = 0;
+
+        function addCustomFieldRow(label = '', type = 'input', id = null) {
+            const container = document.getElementById('ct-fields-container');
+            const fieldId = id || 'cf_' + Date.now() + '_' + customFieldsCounter++;
+
+            const row = document.createElement('div');
+            row.className = "flex gap-2 items-center bg-tactical-900 p-2 rounded border border-tactical-700 custom-field-row";
+            row.dataset.fieldId = fieldId;
+
+            row.innerHTML = `
+                <input type="text" placeholder="Название поля" value="${label}" class="flex-1 bg-tactical-800 border border-tactical-700 rounded p-1.5 text-xs text-white outline-none cf-label">
+                <select class="w-24 bg-tactical-800 border border-tactical-700 rounded p-1.5 text-xs text-white outline-none cf-type">
+                    <option value="input" ${type === 'input' ? 'selected' : ''}>Текст</option>
+                    <option value="textarea" ${type === 'textarea' ? 'selected' : ''}>Блок текста</option>
+                    <option value="number" ${type === 'number' ? 'selected' : ''}>Число</option>
+                </select>
+                <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-400 font-bold px-2 py-1">×</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function openCustomTaskModal(cid, taskId = null) {
+            const container = document.getElementById('ct-fields-container');
+            container.innerHTML = '';
+
+            if (taskId) {
+                // Edit existing task
+                document.getElementById('ct-modal-title').innerText = "Редактировать протокол";
+                document.getElementById('ct-task-id').value = taskId;
+
+                let taskToEdit = null;
+                let cycleId = cid;
+                state.cycles.forEach(c => c.tasks.forEach(t => {
+                    if(t.id === taskId) { taskToEdit = t; cycleId = c.id; }
+                }));
+
+                if (taskToEdit) {
+                    document.getElementById('ct-cycle').value = cycleId;
+                    document.getElementById('ct-title').value = taskToEdit.text;
+                    document.getElementById('ct-time').value = taskToEdit.time || '';
+                    document.getElementById('ct-desc').value = taskToEdit.description || '';
+
+                    if (taskToEdit.fields && taskToEdit.fields.length > 0) {
+                        taskToEdit.fields.forEach(f => {
+                            addCustomFieldRow(f.label, f.type, f.id);
+                        });
+                    }
+                }
+            } else {
+                // New task
+                document.getElementById('ct-modal-title').innerText = "Новый протокол";
+                document.getElementById('ct-task-id').value = '';
+                document.getElementById('ct-cycle').value = cid;
+                document.getElementById('ct-title').value = '';
+                document.getElementById('ct-time').value = '';
+                document.getElementById('ct-desc').value = '';
+            }
+
             document.getElementById('custom-task-modal').classList.remove('hidden');
         }
+
         function closeCustomTaskModal() { document.getElementById('custom-task-modal').classList.add('hidden'); }
+
         function saveCustomTask() {
+            const taskId = document.getElementById('ct-task-id').value;
             const cid = document.getElementById('ct-cycle').value;
-            const cycle = state.cycles.find(c => c.id === cid);
-            cycle.tasks.push({
-                id: 'c' + Date.now(),
-                text: document.getElementById('ct-title').value || "Новая задача",
+
+            // Gather fields
+            const fields = [];
+            document.querySelectorAll('.custom-field-row').forEach(row => {
+                const label = row.querySelector('.cf-label').value.trim();
+                const type = row.querySelector('.cf-type').value;
+                if (label) {
+                    fields.push({ id: row.dataset.fieldId, label: label, type: type });
+                }
+            });
+
+            const taskData = {
+                text: document.getElementById('ct-title').value || "Новый протокол",
                 time: document.getElementById('ct-time').value || "-",
                 description: document.getElementById('ct-desc').value,
-                fields: []
-            });
-            saveState(); updateFullUI(); closeCustomTaskModal(); showToast("Протокол добавлен");
+                fields: fields
+            };
+
+            if (taskId) {
+                // Update existing
+                taskData.id = taskId;
+
+                // Remove from old cycle if cycle changed
+                state.cycles.forEach(c => {
+                    c.tasks = c.tasks.filter(t => t.id !== taskId);
+                });
+
+                // Add to selected cycle
+                const targetCycle = state.cycles.find(c => c.id === cid);
+                if(targetCycle) targetCycle.tasks.push(taskData);
+                showToast("Протокол обновлен");
+            } else {
+                // Create new
+                taskData.id = 'c' + Date.now();
+                const cycle = state.cycles.find(c => c.id === cid);
+                if(cycle) cycle.tasks.push(taskData);
+                showToast("Протокол добавлен");
+            }
+
+            saveState(); updateFullUI(); closeCustomTaskModal();
         }
 
         // ASSET UI
         let tempLinks = [];
+
+        function handleDragStart(e, id) {
+            e.dataTransfer.setData('text/plain', id);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDrop(e, circleId) {
+            e.preventDefault();
+            const assetId = e.dataTransfer.getData('text/plain');
+            if (assetId) {
+                const asset = state.network.find(a => a.id === assetId);
+                if (asset && asset.circle !== circleId) {
+                    asset.circle = circleId;
+                    saveState();
+                    updateFullUI();
+                    showToast('Контакт перемещен');
+                }
+            }
+        }
+
         function renderNetwork() {
             const cont = document.getElementById('network-container'); cont.innerHTML = '';
             const circles = [
@@ -745,16 +876,20 @@
             ];
             circles.forEach(circ => {
                 const assets = state.network.filter(a => a.circle === circ.id);
-                const div = document.createElement('div'); div.className = `border-l-4 ${circ.c} bg-tactical-800 p-4 rounded shadow-md mb-4`;
-                let html = `<h3 class="font-bold text-white uppercase mb-4">${circ.t}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-3">`;
+                const div = document.createElement('div');
+                div.className = `border-l-4 ${circ.c} bg-tactical-800 p-4 rounded shadow-md mb-4 min-h-[120px]`;
+                div.ondragover = handleDragOver;
+                div.ondrop = (e) => handleDrop(e, circ.id);
+
+                let html = `<h3 class="font-bold text-white uppercase mb-4 pointer-events-none">${circ.t}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-3 pointer-events-none">`;
                 assets.forEach(a => {
                     const overdue = a.nextDate && a.nextDate <= state.currentDate;
-                    html += `<div onclick="openAssetModal('${a.id}')" class="bg-tactical-900 border ${overdue ? 'border-red-500' : 'border-tactical-700'} p-3 rounded cursor-pointer hover:bg-tactical-700 transition-all">
-                        <div class="flex justify-between items-start">
+                    html += `<div draggable="true" ondragstart="handleDragStart(event, '${a.id}')" onclick="openAssetModal('${a.id}')" class="bg-tactical-900 border ${overdue ? 'border-red-500' : 'border-tactical-700'} p-3 rounded cursor-pointer hover:bg-tactical-700 transition-all pointer-events-auto">
+                        <div class="flex justify-between items-start pointer-events-none">
                             <div><span class="text-sm font-bold ${overdue ? 'text-red-400' : 'text-white'}">${a.name}</span> <span class="text-[10px] text-orange-400 ml-1">«${a.callsign}»</span></div>
-                            ${overdue ? '<span class="animate-pulse">⚠️</span>' : ''}
+                            ${overdue ? '<span class="animate-pulse pointer-events-none">⚠️</span>' : ''}
                         </div>
-                        <p class="text-[10px] text-blue-400 uppercase mt-1">${a.role}</p>
+                        <p class="text-[10px] text-blue-400 uppercase mt-1 pointer-events-none">${a.role}</p>
                     </div>`;
                 });
                 html += `</div>`; div.innerHTML = html; cont.appendChild(div);
@@ -868,12 +1003,14 @@
                 let h = `<h2 class="text-sm font-bold uppercase ${c.color} border-b border-tactical-700 pb-2 mb-3">${c.title}</h2><div class="space-y-2">`;
                 c.tasks.forEach(t => {
                     const done = hist.completedTasks.includes(t.id);
-                    h += `<div onclick="openTaskModal('${t.id}')" class="flex items-center gap-3 p-2 hover:bg-tactical-700 rounded cursor-pointer group">
-                        <div onclick="toggleTask('${t.id}', event)" class="w-5 h-5 border-2 border-tactical-accent flex items-center justify-center rounded-sm">
+                    const isCustom = t.id.startsWith('c');
+                    h += `<div class="flex items-center gap-3 p-2 hover:bg-tactical-700 rounded group">
+                        <div onclick="toggleTask('${t.id}', event)" class="w-5 h-5 border-2 border-tactical-accent flex items-center justify-center rounded-sm cursor-pointer">
                             ${done ? '<svg class="w-3 h-3 text-tactical-accent" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>' : ''}
                         </div>
-                        <span class="text-sm ${done ? 'line-through text-gray-500' : 'text-gray-200'}">${t.text}</span>
-                        <span class="ml-auto text-[10px] font-mono text-gray-500">${t.time}</span>
+                        <span onclick="openTaskModal('${t.id}')" class="text-sm ${done ? 'line-through text-gray-500' : 'text-gray-200'} flex-1 cursor-pointer">${t.text}</span>
+                        <span class="text-[10px] font-mono text-gray-500">${t.time}</span>
+                        ${isCustom ? `<button onclick="openCustomTaskModal('${c.id}', '${t.id}')" class="text-gray-500 hover:text-tactical-accent p-1" title="Редактировать">⚙️</button>` : ''}
                     </div>`;
                 });
                 h += `</div><button onclick="openCustomTaskModal('${c.id}')" class="w-full mt-3 py-1 text-[10px] text-gray-500 border border-dashed border-gray-700 hover:text-tactical-accent transition-colors">+ ДОБАВИТЬ ПРОТОКОЛ</button>`;
