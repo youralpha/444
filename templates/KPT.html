@@ -1,46 +1,66 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>КПТ Протокол - Геймифицированный Трекер</title>
-    
+
     <!-- Подключаем Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Подключаем иконки Lucide -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    
+
     <!-- Подключаем Chart.js для графика -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Настройка цветов Tailwind -->
+
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        brand: {
-                            50: '#eef2ff',
-                            100: '#e0e7ff',
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            900: '#312e81',
+                        tactical: {
+                            900: '#0f172a',
+                            800: '#1e293b',
+                            700: '#334155',
+                            accent: '#10b981',
+                            alert: '#ef4444',
+                            text: '#f8fafc'
                         }
+                    },
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; }
+        .cyber-border { border: 1px solid #334155; position: relative; }
+        .cyber-border::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 10px; height: 10px;
+            border-top: 2px solid #10b981; border-left: 2px solid #10b981;
+        }
+        .cyber-border::after {
+            content: ''; position: absolute; bottom: 0; right: 0; width: 10px; height: 10px;
+            border-bottom: 2px solid #10b981; border-right: 2px solid #10b981;
+        }
+    </style>
+
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans pb-10 min-h-screen">
+<body class="bg-tactical-900 text-tactical-text font-sans pb-10 min-h-screen">
 
     <!-- Шапка -->
-    <header class="bg-white shadow-sm sticky top-0 z-10">
+    <header class="bg-tactical-800 shadow-sm sticky top-0 z-10 cyber-border border-b-0 border-l-0 border-r-0">
         <div class="max-w-3xl mx-auto px-4 py-4">
             <!-- На главную -->
             <div class="w-full mb-4">
-                <a href="/" class="text-slate-400 hover:text-slate-600 transition-colors text-sm font-medium flex items-center gap-1">
+                <a href="/" class="text-gray-500 hover:text-gray-300 transition-colors text-sm font-medium flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
@@ -49,20 +69,20 @@
             </div>
 
             <div class="flex justify-between items-center mb-4">
-                <h1 class="text-xl font-bold flex items-center gap-2 text-brand-600">
+                <h1 class="text-xl font-bold flex items-center gap-2 text-tactical-accent">
                     <i data-lucide="brain-circuit" class="w-6 h-6"></i> КПТ Протокол
                 </h1>
-                <div class="flex items-center gap-2 bg-brand-50 px-3 py-1 rounded-full border border-brand-100">
+                <div class="flex items-center gap-2 bg-tactical-900 px-3 py-1 rounded-full border border-tactical-700">
                     <i data-lucide="trophy" class="w-4 h-4 text-amber-500"></i>
-                    <span class="font-semibold text-brand-900" id="ui-level">Уровень 1</span>
+                    <span class="font-semibold text-white" id="ui-level">Уровень 1</span>
                 </div>
             </div>
-            
+
             <!-- Полоса опыта -->
-            <div class="w-full bg-slate-200 rounded-full h-2.5 mb-1">
-                <div id="ui-progress-bar" class="bg-brand-600 h-2.5 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+            <div class="w-full bg-tactical-700 rounded-full h-2.5 mb-1">
+                <div id="ui-progress-bar" class="bg-tactical-accent h-2.5 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
             </div>
-            <div class="flex justify-between text-xs text-slate-500 font-medium">
+            <div class="flex justify-between text-xs text-gray-400 font-medium">
                 <span id="ui-total-xp">0 Всего XP</span>
                 <span id="ui-xp-left">До ур. 2 осталось 100 XP</span>
             </div>
@@ -71,20 +91,20 @@
 
     <main class="max-w-3xl mx-auto px-4 mt-6">
         <!-- Навигация -->
-        <div class="flex bg-slate-200 rounded-xl p-1 mb-6">
-            <button onclick="setTab('tracker')" id="tab-tracker" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors bg-white shadow-sm text-brand-600">
+        <div class="flex bg-tactical-700 rounded-sm p-1 mb-6">
+            <button onclick="setTab('tracker')" id="tab-tracker" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-sm text-sm font-medium transition-colors bg-tactical-800 shadow-sm text-tactical-accent">
                 <i data-lucide="calendar" class="w-4 h-4"></i> Трекер
             </button>
-            <button onclick="setTab('stats')" id="tab-stats" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:text-brand-600">
+            <button onclick="setTab('stats')" id="tab-stats" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-sm text-sm font-medium transition-colors text-gray-300 hover:text-tactical-accent">
                 <i data-lucide="trending-up" class="w-4 h-4"></i> Динамика
             </button>
         </div>
 
         <!-- Вкладка Трекера -->
         <div id="view-tracker" class="space-y-6 block">
-            <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                <h2 class="font-semibold text-slate-700">Текущая неделя</h2>
-                <select id="week-selector" onchange="setWeek(this.value)" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2 outline-none cursor-pointer">
+            <div class="flex justify-between items-center bg-tactical-800 p-4 rounded-sm cyber-border shadow-sm border border-tactical-700">
+                <h2 class="font-semibold text-gray-200">Текущая неделя</h2>
+                <select id="week-selector" onchange="setWeek(this.value)" class="bg-tactical-900 border border-tactical-700 text-gray-200 text-sm rounded-sm focus:ring-tactical-accent focus:border-tactical-accent block p-2 outline-none cursor-pointer">
                     <option value="1">Неделя 1: Мониторинг</option>
                     <option value="2">Неделя 2: Активация и Сон</option>
                     <option value="3">Неделя 3: Избегание</option>
@@ -100,46 +120,46 @@
             <div id="week-metadata-container"></div>
 
             <!-- Список задач -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-                    <span class="font-semibold text-sm text-slate-500 uppercase tracking-wider">Ежедневные задания</span>
-                    <span id="ui-today-count" class="text-xs font-bold text-brand-600 bg-brand-100 px-2 py-1 rounded-md">Сегодня: 0/0</span>
+            <div class="bg-tactical-800 rounded-sm cyber-border shadow-sm border border-tactical-700 overflow-hidden">
+                <div class="px-4 py-3 bg-tactical-900 border-b border-tactical-700 flex justify-between items-center">
+                    <span class="font-semibold text-sm text-gray-400 uppercase tracking-wider">Ежедневные задания</span>
+                    <span id="ui-today-count" class="text-xs font-bold text-tactical-accent bg-tactical-800 px-2 py-1 rounded-md">Сегодня: 0/0</span>
                 </div>
-                <ul id="task-list" class="divide-y divide-slate-100">
+                <ul id="task-list" class="divide-y divide-tactical-700">
                     <!-- Задачи генерируются через JavaScript -->
                 </ul>
             </div>
 
             <!-- Блок Библиотерапии -->
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-emerald-100 relative overflow-hidden">
+            <div class="bg-tactical-800 p-5 cyber-border rounded-sm shadow-sm border border-tactical-700 relative overflow-hidden">
                 <div class="absolute top-0 right-0 p-4 opacity-10">
-                    <i data-lucide="book-open" class="w-24 h-24 text-emerald-500"></i>
+                    <i data-lucide="book-open" class="w-24 h-24 text-tactical-accent"></i>
                 </div>
-                <h2 class="font-bold text-emerald-700 flex items-center gap-2 mb-2 relative z-10">
+                <h2 class="font-bold text-tactical-accent flex items-center gap-2 mb-2 relative z-10">
                     <i data-lucide="book" class="w-5 h-5"></i> Библиотерапия
                 </h2>
-                <p class="text-sm text-slate-600 mb-5 relative z-10 max-w-lg">
-                    Чтение: <strong>«Когнитивная терапия», Джудит Бек</strong>. Читайте в своем темпе. За каждую новую прочитанную страницу начисляется <span class="font-semibold text-emerald-600">+2 XP</span>.
+                <p class="text-sm text-gray-300 mb-5 relative z-10 max-w-lg">
+                    Чтение: <strong>«Когнитивная терапия», Джудит Бек</strong>. Читайте в своем темпе. За каждую новую прочитанную страницу начисляется <span class="font-semibold text-tactical-accent">+2 XP</span>.
                 </p>
-                
+
                 <div class="flex flex-col sm:flex-row items-center gap-6 relative z-10">
                     <div class="w-full sm:w-1/3">
-                        <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Текущая страница</label>
+                        <label class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Текущая страница</label>
                         <div class="relative">
                             <input type="number" id="book-page-input" min="0" max="400" placeholder="0"
                                 oninput="silentUpdateReading(this.value)"
-                                class="w-full p-3 pl-4 pr-12 bg-slate-50 border border-emerald-200 text-lg font-bold text-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
-                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">/ 400</span>
+                                class="w-full p-3 pl-4 pr-12 bg-tactical-900 border border-tactical-700 text-lg font-bold text-white rounded-sm focus:ring-2 focus:ring-tactical-accent outline-none transition-all">
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">/ 400</span>
                         </div>
                     </div>
-                    
+
                     <div class="w-full sm:w-2/3 mt-2 sm:mt-0">
-                        <div class="flex justify-between text-xs text-slate-500 font-medium mb-2">
+                        <div class="flex justify-between text-xs text-gray-400 font-medium mb-2">
                             <span>Прогресс книги</span>
-                            <span id="ui-book-percent" class="text-emerald-600 font-bold">0%</span>
+                            <span id="ui-book-percent" class="text-tactical-accent font-bold">0%</span>
                         </div>
-                        <div class="w-full bg-slate-100 rounded-full h-4 border border-slate-200/50">
-                            <div id="ui-book-bar" class="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full rounded-full transition-all duration-700 ease-out shadow-inner" style="width: 0%"></div>
+                        <div class="w-full bg-tactical-800 rounded-full h-4 border border-tactical-700/50">
+                            <div id="ui-book-bar" class="bg-gradient-to-r from-tactical-accent to-tactical-accent h-full rounded-full transition-all duration-700 ease-out shadow-inner" style="width: 0%"></div>
                         </div>
                     </div>
                 </div>
@@ -149,30 +169,30 @@
         <!-- Вкладка Статистики -->
         <div id="view-stats" class="space-y-6 hidden">
             <!-- График Задач -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                <h2 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                    <i data-lucide="check-square" class="w-5 h-5 text-brand-500"></i> Динамика выполнения заданий
+            <div class="bg-tactical-800 p-6 cyber-border rounded-sm shadow-sm border border-tactical-700">
+                <h2 class="font-semibold text-white mb-4 flex items-center gap-2">
+                    <i data-lucide="check-square" class="w-5 h-5 text-tactical-accent"></i> Динамика выполнения заданий
                 </h2>
-                
-                <div id="empty-chart-msg" class="h-40 flex items-center justify-center text-slate-400 text-sm bg-slate-50 rounded-lg border border-dashed border-slate-200 hidden">
+
+                <div id="empty-chart-msg" class="h-40 flex items-center justify-center text-gray-500 text-sm bg-tactical-900 rounded-sm border border-dashed border-tactical-700 hidden">
                     Выполните первые задания, чтобы увидеть график прогресса.
                 </div>
-                
+
                 <div id="chart-container" class="h-64 w-full relative">
                     <canvas id="progressChart"></canvas>
                 </div>
             </div>
 
             <!-- График Книги -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                <h2 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                    <i data-lucide="book-open" class="w-5 h-5 text-emerald-500"></i> Прогресс чтения книги
+            <div class="bg-tactical-800 p-6 cyber-border rounded-sm shadow-sm border border-tactical-700">
+                <h2 class="font-semibold text-white mb-4 flex items-center gap-2">
+                    <i data-lucide="book-open" class="w-5 h-5 text-tactical-accent"></i> Прогресс чтения книги
                 </h2>
-                
-                <div id="empty-book-chart-msg" class="h-40 flex items-center justify-center text-slate-400 text-sm bg-slate-50 rounded-lg border border-dashed border-slate-200 hidden">
+
+                <div id="empty-book-chart-msg" class="h-40 flex items-center justify-center text-gray-500 text-sm bg-tactical-900 rounded-sm border border-dashed border-tactical-700 hidden">
                     Начните читать книгу и введите первую страницу, чтобы увидеть график.
                 </div>
-                
+
                 <div id="book-chart-container" class="h-64 w-full relative">
                     <canvas id="bookChart"></canvas>
                 </div>
@@ -270,11 +290,11 @@
             currentWeek: 1,
             xp: 0,
             level: 1,
-            dailyProgress: {}, 
-            expandedTasks: [], 
-            taskData: {},       
+            dailyProgress: {},
+            expandedTasks: [],
+            taskData: {},
             readingHistory: {},
-            maxPageReached: 0   
+            maxPageReached: 0
         };
 
         let taskChartInstance = null;
@@ -300,12 +320,12 @@
                 if (!state.readingHistory) state.readingHistory = {};
                 if (typeof state.maxPageReached === 'undefined') state.maxPageReached = 0;
             }
-            
+
             if (!state.dailyProgress[todayDate]) state.dailyProgress[todayDate] = [];
             if (!state.taskData[todayDate]) state.taskData[todayDate] = {};
 
             document.getElementById('week-selector').value = state.currentWeek;
-            
+
             const todayPage = state.readingHistory[todayDate] || state.maxPageReached;
             document.getElementById('book-page-input').value = todayPage === 0 ? '' : todayPage;
 
@@ -360,11 +380,11 @@
 
             if (page > state.maxPageReached) {
                 const delta = page - state.maxPageReached;
-                state.xp += delta * 2; 
+                state.xp += delta * 2;
                 state.maxPageReached = page;
-                
+
                 state.level = Math.floor(state.xp / 100) + 1;
-                updateHeaderUI(); 
+                updateHeaderUI();
             }
 
             saveToMemory();
@@ -395,7 +415,7 @@
         function toggleTask(taskId, taskXp) {
             let todayTasks = [...(state.dailyProgress[todayDate] || [])];
             let newXp = state.xp;
-            
+
             if (todayTasks.includes(taskId)) {
                 todayTasks = todayTasks.filter(id => id !== taskId);
                 newXp -= taskXp;
@@ -438,34 +458,34 @@
             const viewStats = document.getElementById('view-stats');
 
             if (state.activeTab === 'tracker') {
-                btnTracker.className = "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors bg-white shadow-sm text-brand-600";
-                btnStats.className = "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:text-brand-600";
+                btnTracker.className = "flex-1 flex items-center justify-center gap-2 py-2 rounded-sm text-sm font-medium transition-colors bg-tactical-800 shadow-sm text-tactical-accent";
+                btnStats.className = "flex-1 flex items-center justify-center gap-2 py-2 rounded-sm text-sm font-medium transition-colors text-gray-300 hover:text-tactical-accent";
                 viewTracker.classList.remove('hidden');
                 viewStats.classList.add('hidden');
             } else {
-                btnStats.className = "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors bg-white shadow-sm text-brand-600";
-                btnTracker.className = "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:text-brand-600";
+                btnStats.className = "flex-1 flex items-center justify-center gap-2 py-2 rounded-sm text-sm font-medium transition-colors bg-tactical-800 shadow-sm text-tactical-accent";
+                btnTracker.className = "flex-1 flex items-center justify-center gap-2 py-2 rounded-sm text-sm font-medium transition-colors text-gray-300 hover:text-tactical-accent";
                 viewStats.classList.remove('hidden');
                 viewTracker.classList.add('hidden');
             }
 
             if (state.activeTab === 'tracker') {
-                
+
                 // --- Рендер метаданных недели (ОПИСАНИЕ И ЦЕЛЬ) ---
                 const metaContainer = document.getElementById('week-metadata-container');
                 const meta = WEEK_METADATA[state.currentWeek];
-                
+
                 metaContainer.innerHTML = `
-                    <div class="bg-brand-50/50 border border-brand-100 rounded-xl p-5 shadow-sm mb-6">
-                        <h3 class="font-bold text-brand-800 text-lg mb-2 flex items-center gap-2">
-                            <i data-lucide="info" class="w-5 h-5 text-brand-500"></i> ${meta.title}
+                    <div class="bg-tactical-900/50 border border-tactical-700 rounded-sm p-5 shadow-sm mb-6">
+                        <h3 class="font-bold text-tactical-accent text-lg mb-2 flex items-center gap-2">
+                            <i data-lucide="info" class="w-5 h-5 text-tactical-accent"></i> ${meta.title}
                         </h3>
-                        <p class="text-sm text-brand-900/80 mb-4 leading-relaxed">
+                        <p class="text-sm text-white/80 mb-4 leading-relaxed">
                             ${meta.desc}
                         </p>
-                        <div class="bg-white rounded-lg p-3.5 border border-brand-100/60 shadow-sm">
-                            <span class="text-xs font-bold uppercase tracking-wider text-brand-500 mb-1 block">🎯 Цель недели:</span>
-                            <p class="text-sm font-medium text-slate-700 leading-relaxed">${meta.goal}</p>
+                        <div class="bg-tactical-800 rounded-sm p-3.5 border border-tactical-700/60 shadow-sm">
+                            <span class="text-xs font-bold uppercase tracking-wider text-tactical-accent mb-1 block">🎯 Цель недели:</span>
+                            <p class="text-sm font-medium text-gray-200 leading-relaxed">${meta.goal}</p>
                         </div>
                     </div>
                 `;
@@ -473,18 +493,18 @@
                 const tasks = PROTOCOL_WEEKS[state.currentWeek];
                 const completedToday = state.dailyProgress[todayDate] || [];
                 const dayData = state.taskData[todayDate] || {};
-                
+
                 document.getElementById('ui-today-count').innerText = `Сегодня: ${completedToday.length}/${tasks.length}`;
-                
+
                 const taskListEl = document.getElementById('task-list');
                 taskListEl.innerHTML = '';
 
                 tasks.forEach(task => {
                     const isDone = completedToday.includes(task.id);
                     const isExpanded = state.expandedTasks.includes(task.id);
-                    
+
                     const li = document.createElement('li');
-                    li.className = `p-4 transition-colors ${isDone ? 'bg-brand-50/40' : 'hover:bg-slate-50'}`;
+                    li.className = `p-4 transition-colors ${isDone ? 'bg-tactical-700/40' : 'hover:bg-tactical-700'}`;
 
                     const headerDiv = document.createElement('div');
                     headerDiv.className = "flex items-start gap-4";
@@ -492,19 +512,19 @@
                     const checkBtn = document.createElement('button');
                     checkBtn.className = "flex-shrink-0 mt-0.5 focus:outline-none cursor-pointer hover:scale-110 transition-transform";
                     checkBtn.onclick = (e) => { e.stopPropagation(); toggleTask(task.id, task.xp); };
-                    checkBtn.innerHTML = isDone ? `<i data-lucide="check-circle" class="w-6 h-6 text-emerald-500"></i>` : `<i data-lucide="circle" class="w-6 h-6 text-slate-300"></i>`;
+                    checkBtn.innerHTML = isDone ? `<i data-lucide="check-circle" class="w-6 h-6 text-tactical-accent"></i>` : `<i data-lucide="circle" class="w-6 h-6 text-gray-600"></i>`;
 
                     const textWrap = document.createElement('div');
                     textWrap.className = "flex-1 cursor-pointer select-none group";
                     textWrap.onclick = () => toggleExpand(task.id);
-                    
+
                     textWrap.innerHTML = `
                         <div class="flex justify-between items-start">
                             <div class="pr-4">
-                                <p class="text-sm md:text-base font-medium transition-colors ${isDone ? 'text-slate-400 line-through' : 'text-slate-700 group-hover:text-brand-600'}">${task.text}</p>
-                                <p class="text-xs text-brand-500 mt-1 font-semibold">+${task.xp} XP</p>
+                                <p class="text-sm md:text-base font-medium transition-colors ${isDone ? 'text-gray-500 line-through' : 'text-gray-200 group-hover:text-tactical-accent'}">${task.text}</p>
+                                <p class="text-xs text-tactical-accent mt-1 font-semibold">+${task.xp} XP</p>
                             </div>
-                            <div class="flex-shrink-0 text-slate-400 group-hover:text-brand-500 transition-colors mt-0.5"><i data-lucide="${isExpanded ? 'chevron-up' : 'chevron-down'}" class="w-5 h-5"></i></div>
+                            <div class="flex-shrink-0 text-gray-500 group-hover:text-tactical-accent transition-colors mt-0.5"><i data-lucide="${isExpanded ? 'chevron-up' : 'chevron-down'}" class="w-5 h-5"></i></div>
                         </div>
                     `;
 
@@ -514,34 +534,34 @@
 
                     if (isExpanded) {
                         const detailsDiv = document.createElement('div');
-                        detailsDiv.className = "ml-10 mt-3 pt-3 border-t border-slate-100 text-sm text-slate-600 cursor-default";
-                        
+                        detailsDiv.className = "ml-10 mt-3 pt-3 border-t border-tactical-700 text-sm text-gray-300 cursor-default";
+
                         let stepsHtml = task.steps.map(step => `<li class="mb-1.5 pl-1">${step}</li>`).join('');
                         let htmlContent = `
-                            <p class="mb-3 text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 leading-relaxed"><span class="font-semibold text-brand-600 mr-1">ℹ️ Суть:</span> ${task.description}</p>
-                            <div class="mt-2 mb-4"><span class="font-semibold text-xs uppercase tracking-wider text-slate-400 block mb-2">Этапы выполнения:</span><ol class="list-decimal pl-4 space-y-1">${stepsHtml}</ol></div>
+                            <p class="mb-3 text-gray-200 bg-tactical-900 p-2.5 rounded-sm border border-tactical-700 leading-relaxed"><span class="font-semibold text-tactical-accent mr-1">ℹ️ Суть:</span> ${task.description}</p>
+                            <div class="mt-2 mb-4"><span class="font-semibold text-xs uppercase tracking-wider text-gray-500 block mb-2">Этапы выполнения:</span><ol class="list-decimal pl-4 space-y-1">${stepsHtml}</ol></div>
                         `;
 
                         if (task.inputs && task.inputs.length > 0) {
-                            htmlContent += `<div class="mt-4 p-4 bg-white border border-slate-200 rounded-xl space-y-4 shadow-sm"><h4 class="font-semibold text-slate-800 text-xs uppercase tracking-wider mb-3">Ваши записи:</h4>`;
+                            htmlContent += `<div class="mt-4 p-4 bg-tactical-800 border border-tactical-700 rounded-sm space-y-4 shadow-sm"><h4 class="font-semibold text-white text-xs uppercase tracking-wider mb-3">Ваши записи:</h4>`;
                             task.inputs.forEach(inp => {
                                 const val = dayData[`${task.id}_${inp.id}`] || '';
                                 htmlContent += `<div class="space-y-1.5">`;
-                                
+
                                 if (inp.type === 'slider') {
                                     const currentVal = val || inp.min;
                                     const displayId = `val_${task.id}_${inp.id}`;
                                     htmlContent += `
-                                        <div class="flex justify-between items-center"><label class="block text-sm font-medium text-slate-700">${inp.label}</label><span id="${displayId}" class="text-sm font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded">${currentVal}${inp.suffix}</span></div>
-                                        <input type="range" min="${inp.min}" max="${inp.max}" step="${inp.step}" value="${currentVal}" oninput="silentUpdateInput('${task.id}', '${inp.id}', this.value, '${displayId}', '${inp.suffix}')" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-600">
-                                        <div class="flex justify-between text-xs text-slate-400"><span>${inp.min}</span><span>${inp.max}</span></div>
+                                        <div class="flex justify-between items-center"><label class="block text-sm font-medium text-gray-200">${inp.label}</label><span id="${displayId}" class="text-sm font-bold text-tactical-accent bg-tactical-900 px-2 py-0.5 rounded">${currentVal}${inp.suffix}</span></div>
+                                        <input type="range" min="${inp.min}" max="${inp.max}" step="${inp.step}" value="${currentVal}" oninput="silentUpdateInput('${task.id}', '${inp.id}', this.value, '${displayId}', '${inp.suffix}')" class="w-full h-2 bg-tactical-700 rounded-sm appearance-none cursor-pointer accent-tactical-accent">
+                                        <div class="flex justify-between text-xs text-gray-500"><span>${inp.min}</span><span>${inp.max}</span></div>
                                     `;
-                                } 
+                                }
                                 else if (inp.type === 'textarea') {
-                                    htmlContent += `<label class="block text-sm font-medium text-slate-700">${inp.label}</label><textarea rows="2" placeholder="${inp.placeholder || 'Напишите здесь...'}" oninput="silentUpdateInput('${task.id}', '${inp.id}', this.value)" class="w-full p-2.5 bg-slate-50 border border-slate-200 text-slate-800 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all resize-y text-sm">${val}</textarea>`;
+                                    htmlContent += `<label class="block text-sm font-medium text-gray-200">${inp.label}</label><textarea rows="2" placeholder="${inp.placeholder || 'Напишите здесь...'}" oninput="silentUpdateInput('${task.id}', '${inp.id}', this.value)" class="w-full p-2.5 bg-tactical-900 border border-tactical-700 text-white rounded-sm focus:ring-2 focus:ring-tactical-accent focus:border-tactical-accent outline-none transition-all resize-y text-sm">${val}</textarea>`;
                                 }
                                 else if (inp.type === 'text') {
-                                    htmlContent += `<label class="block text-sm font-medium text-slate-700">${inp.label}</label><input type="text" placeholder="${inp.placeholder || 'Напишите здесь...'}" value="${val}" oninput="silentUpdateInput('${task.id}', '${inp.id}', this.value)" class="w-full p-2.5 bg-slate-50 border border-slate-200 text-slate-800 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all text-sm">`;
+                                    htmlContent += `<label class="block text-sm font-medium text-gray-200">${inp.label}</label><input type="text" placeholder="${inp.placeholder || 'Напишите здесь...'}" value="${val}" oninput="silentUpdateInput('${task.id}', '${inp.id}', this.value)" class="w-full p-2.5 bg-tactical-900 border border-tactical-700 text-white rounded-sm focus:ring-2 focus:ring-tactical-accent focus:border-tactical-accent outline-none transition-all text-sm">`;
                                 }
                                 htmlContent += `</div>`;
                             });
@@ -585,7 +605,7 @@
                 document.getElementById('empty-chart-msg').classList.add('hidden');
                 document.getElementById('chart-container').classList.remove('hidden');
 
-                const labels = taskDates.map(date => date.slice(5)); 
+                const labels = taskDates.map(date => date.slice(5));
                 const dataPoints = taskDates.map(date => state.dailyProgress[date].length);
                 const ctxTask = document.getElementById('progressChart').getContext('2d');
                 if (taskChartInstance) taskChartInstance.destroy();
@@ -594,7 +614,7 @@
                     type: 'line',
                     data: {
                         labels: labels,
-                        datasets: [{ label: 'Выполнено заданий', data: dataPoints, borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)', borderWidth: 3, pointBackgroundColor: '#6366f1', pointRadius: 4, tension: 0.3, fill: true }]
+                        datasets: [{ label: 'Выполнено заданий', data: dataPoints, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 3, pointBackgroundColor: '#10b981', pointRadius: 4, tension: 0.3, fill: true }]
                     },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
                 });
@@ -611,7 +631,7 @@
 
                 const firstDate = bookDatesOrig[0];
                 const continuousDates = generateDateRange(firstDate, todayDate);
-                
+
                 const labelsBook = [];
                 const dataPointsBook = [];
                 let lastKnownPage = 0;
@@ -634,15 +654,15 @@
                         datasets: [{
                             label: 'Прочитано страниц',
                             data: dataPointsBook,
-                            borderColor: '#10b981', 
+                            borderColor: '#10b981',
                             backgroundColor: 'rgba(16, 185, 129, 0.15)',
                             borderWidth: 3,
                             pointBackgroundColor: '#10b981',
-                            pointRadius: 0, 
+                            pointRadius: 0,
                             pointHoverRadius: 6,
-                            tension: 0.2, 
+                            tension: 0.2,
                             fill: true,
-                            stepped: 'before' 
+                            stepped: 'before'
                         }]
                     },
                     options: {
@@ -654,7 +674,7 @@
                         },
                         scales: {
                             x: { grid: { display: false } },
-                            y: { beginAtZero: true, max: BOOK_TOTAL_PAGES, grid: { color: '#f1f5f9' }, border: { display: false } }
+                            y: { beginAtZero: true, max: BOOK_TOTAL_PAGES, grid: { color: '#334155' }, border: { display: false } }
                         }
                     }
                 });

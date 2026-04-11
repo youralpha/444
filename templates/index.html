@@ -1,10 +1,33 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Главное меню</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        tactical: {
+                            900: '#0f172a',
+                            800: '#1e293b',
+                            700: '#334155',
+                            accent: '#10b981',
+                            alert: '#ef4444',
+                            text: '#f8fafc'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         body {
             background-color: #0f172a;
@@ -16,21 +39,30 @@
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
+        .cyber-border { border: 1px solid #334155; position: relative; }
+        .cyber-border::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 10px; height: 10px;
+            border-top: 2px solid #10b981; border-left: 2px solid #10b981;
+        }
+        .cyber-border::after {
+            content: ''; position: absolute; bottom: 0; right: 0; width: 10px; height: 10px;
+            border-bottom: 2px solid #10b981; border-right: 2px solid #10b981;
+        }
     </style>
 </head>
-<body>
-    <div class="flex flex-col items-center bg-slate-800 p-8 rounded-3xl shadow-2xl max-w-md w-full mx-4 border border-slate-700 space-y-6">
-        <h1 class="text-3xl font-bold text-white text-center">Главное меню</h1>
-        <p class="text-slate-400 text-center text-sm">Выберите приложение для запуска</p>
+<body class="font-sans">
+    <div class="flex flex-col items-center bg-tactical-800 p-8 rounded-sm shadow-2xl max-w-md w-full mx-4 cyber-border space-y-6">
+        <h1 class="text-3xl font-bold tracking-widest text-tactical-accent font-mono uppercase text-center">Главное меню</h1>
+        <p class="text-gray-400 text-center text-sm font-mono uppercase tracking-wider">Выберите протокол для запуска</p>
 
-        <a href="/base" class="w-full text-center bg-sky-500 hover:bg-sky-400 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg shadow-sky-500/30">
-            Таймер Дыхания (BASE)
+        <a href="/base" class="w-full text-center bg-tactical-900 border border-tactical-700 hover:border-tactical-accent text-white font-bold py-3 px-4 rounded text-sm transition-colors uppercase tracking-widest flex justify-between items-center group">
+            <span>Таймер Дыхания (BASE)</span><span class="text-tactical-accent opacity-0 group-hover:opacity-100 transition-opacity">►</span>
         </a>
-        <a href="/kpt" class="w-full text-center bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg shadow-emerald-500/30">
-            КПТ Протокол
+        <a href="/kpt" class="w-full text-center bg-tactical-900 border border-tactical-700 hover:border-tactical-accent text-white font-bold py-3 px-4 rounded text-sm transition-colors uppercase tracking-widest flex justify-between items-center group">
+            <span>КПТ Протокол</span><span class="text-tactical-accent opacity-0 group-hover:opacity-100 transition-opacity">►</span>
         </a>
-        <a href="/perimetr" class="w-full text-center bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg shadow-red-600/30">
-            ПЕРИМЕТР v4.0
+        <a href="/perimetr" class="w-full text-center bg-tactical-900 border border-tactical-700 hover:border-tactical-accent text-white font-bold py-3 px-4 rounded text-sm transition-colors uppercase tracking-widest flex justify-between items-center group">
+            <span>ПЕРИМЕТР v4.0</span><span class="text-tactical-accent opacity-0 group-hover:opacity-100 transition-opacity">►</span>
         </a>
     </div>
 </body>
