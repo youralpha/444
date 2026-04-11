@@ -74,7 +74,7 @@
 
     <!-- На главную -->
     <div class="w-full mb-4">
-        <a href="/" class="text-slate-400 hover:text-white transition-colors text-sm font-medium flex items-center gap-1">
+        <a href="index.html" class="text-gray-400 hover:text-white transition-colors text-sm font-medium flex items-center gap-1">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
@@ -507,20 +507,20 @@
             }
         }
 
-        async function saveState() {
-            try { await fetch('/api/data/perimetr', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state) }); } catch(e) { console.error('Failed to save state', e); }
+        function saveState() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
             document.getElementById('sync-status').innerText = 'Сохранение...';
             setTimeout(() => { document.getElementById('sync-status').innerText = 'Синхронизировано'; }, 500);
         }
 
-        async function loadState() {
-            let saved = null; try { const res = await fetch('/api/data/perimetr'); if (res.ok) { const parsed = await res.json(); if (Object.keys(parsed).length > 0) saved = JSON.stringify(parsed); } } catch (e) { console.error('Failed to load data', e); }
+        function loadState() {
+            const saved = localStorage.getItem(STORAGE_KEY);
             let parsedState = null;
 
             if (saved) {
                 parsedState = JSON.parse(saved);
             } else {
-                const oldSaved = null;
+                const oldSaved = localStorage.getItem('perimeter_state_v13') || localStorage.getItem('perimeter_state_v12');
                 if (oldSaved) parsedState = JSON.parse(oldSaved);
             }
 
@@ -568,12 +568,12 @@
             });
         }
 
-        async function promptClearData() {
+        function promptClearData() {
             if(state.score <= -50) {
-                await fetch('/api/data/perimetr', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }); location.reload();
+                localStorage.removeItem(STORAGE_KEY); location.reload();
             } else {
-                showConfirmModal("Уничтожение", "Удалить ВСЮ историю и контакты? Это необратимо.", async () => {
-                    await fetch('/api/data/perimetr', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }); location.reload();
+                showConfirmModal("Уничтожение", "Удалить ВСЮ историю и контакты? Это необратимо.", () => {
+                    localStorage.removeItem(STORAGE_KEY); location.reload();
                 });
             }
         }
@@ -1082,7 +1082,7 @@
             saveState(); showToast("План сохранен");
         }
 
-        window.onload = async () => { await loadState(); updateFullUI(); };
+        window.onload = () => { loadState(); updateFullUI(); };
     </script>
 </body>
 </html>

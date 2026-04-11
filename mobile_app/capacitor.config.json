@@ -1,0 +1,6 @@
+{
+  "appId": "com.tactical.perimeter",
+  "appName": "Perimeter",
+  "webDir": ".",
+  "bundledWebRuntime": false
+}

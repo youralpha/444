@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Таймер Дыхания и Релаксации 2.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        tactical: {
+                            900: '#0f172a',
+                            800: '#1e293b',
+                            700: '#334155',
+                            accent: '#10b981',
+                            alert: '#ef4444',
+                            text: '#f8fafc'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0f172a; /* tactical-900 */
+            color: #f8fafc; /* white */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 1rem 0;
+        }
+
+
+        .cyber-border { border: 1px solid #334155; position: relative; }
+        .cyber-border::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 10px; height: 10px;
+            border-top: 2px solid #10b981; border-left: 2px solid #10b981;
+        }
+        .cyber-border::after {
+            content: ''; position: absolute; bottom: 0; right: 0; width: 10px; height: 10px;
+            border-bottom: 2px solid #10b981; border-right: 2px solid #10b981;
+        }
+
+        .timer-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            margin: 0 auto;
+        }
+
+        .progress-ring {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring__circle-bg {
+            fill: transparent;
+            stroke: #334155; /* tactical-700 */
+            stroke-width: 12;
+        }
+
+        .progress-ring__circle {
+            fill: transparent;
+            stroke: #10b981; /* tactical-accent */
+            stroke-width: 12;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.05s linear, stroke 0.3s ease;
+        }
+
+        .time-display {
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .cycle-display {
+            font-size: 1.125rem;
+            color: #94a3b8; /* gray-400 */
+            margin-top: 0.5rem;
+        }
+
+        .phase-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: -0.2rem;
+            color: #10b981;
+            transition: color 0.3s ease;
+            text-align: center;
+            max-width: 80%;
+            line-height: 1.1;
+            min-height: 2.2rem;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            letter-spacing: 0.05em;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pulse-animation {
+            animation: pulse 0.3s ease-out;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        .tab-btn {
+            font-size: 0.875rem;
+            padding: 0.5rem 0.25rem;
+            flex: 1;
+            font-weight: 600;
+            transition: all 0.2s;
+            border-radius: 0.5rem;
+            line-height: 1.2;
+            text-align: center;
+        }
+
+        .subtab-btn {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.6rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        audio::-webkit-media-controls-panel {
+            background-color: #1e293b;
+            color: white;
+        }
+    </style>
+</head>
+<body class="font-sans" class="font-sans">
+
+    <!-- Модальное окно с информацией -->
+    <div id="info-modal" class="fixed inset-0 bg-tactical-900/80 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-tactical-800 p-6 sm:p-8 rounded-sm max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl relative border border-tactical-700 transform scale-95 transition-transform duration-300" id="modal-content">
+
+            <button id="btn-close-modal" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors bg-tactical-700 hover:bg-tactical-700 rounded p-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+            </button>
+
+            <h2 class="text-xl sm:text-2xl font-bold text-white mb-6 pr-8">Стрессоустойчивость по методикам спецслужб 2.0</h2>
+
+            <div class="text-gray-300 text-sm sm:text-base space-y-8">
+
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-4 border-b border-tactical-700 pb-2">I. Базовая подготовка (20 / 40 мин)</h3>
+                    <p class="mb-3">Последовательная работа с вегетативной нервной системой:</p>
+                    <ul class="list-decimal pl-5 space-y-2 text-gray-400">
+                        <li><strong>Физиологический вздох:</strong> Быстрый сброс CO2 и острого стресса.</li>
+                        <li><strong>Резонансное дыхание (ВСР):</strong> Синхронизация сердца и дыхания (~6.0 вд/мин).</li>
+                        <li><strong>ПМР:</strong> Чередование максимального напряжения и расслабления 7 групп мышц.</li>
+                        <li><strong>Пространство дыхания:</strong> Трехэтапная практика осознанности (Осознание → Собирание → Расширение).</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-4 border-b border-tactical-700 pb-2">II. Расширенный Арсенал (30 мин)</h3>
+                    <p class="mb-3">Умная автоматическая сборка ментальных техник под время суток. Также любую технику можно запустить отдельно.</p>
+                    <ul class="list-decimal pl-5 space-y-2 text-gray-400">
+                        <li><strong>Когнитивный блок (5 мин):</strong> Анализ ситуации (СТОП-КАДР) и работа с парализующими мыслями (ACT-разделение).</li>
+                        <li><strong>Ментальная репетиция (10 мин):</strong> Визуализация предстоящего события по 3 сценариям (Оптимальный, Сложный, Провальный).</li>
+                        <li><strong>Интеграция (5 мин):</strong> Физиологическая встряска тела. <span class="text-tactical-accent">Внимание:</span> Если время на устройстве ≥ 19:00 или < 09:00, используется этап Холодовой экспозиции. Днем используется Метод "Ключ".</li>
+                        <li><strong>Yoga Nidra / NSDR (10 мин):</strong> Техника глубокого управляемого сна для финального закрепления результата.</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-4 border-b border-tactical-700 pb-2">III. Максимум (50 / 70 мин)</h3>
+                    <p class="text-gray-400">Слияние "Базовой подготовки" и "Расширенного Арсенала" в единый непрерывный поток для глубокой перезагрузки и подготовки к экстремальным нагрузкам.</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Основной интерфейс таймера -->
+    <div class="flex flex-col items-center bg-tactical-800 p-5 sm:p-8 rounded-sm shadow-2xl max-w-[28rem] w-full mx-4 cyber-border">
+
+        <!-- На главную -->
+        <div class="w-full mb-4">
+            <a href="index.html" class="text-gray-400 hover:text-white transition-colors text-sm font-medium flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                На главную
+            </a>
+        </div>
+
+        <!-- Главные вкладки (Режимы) -->
+        <div class="flex justify-between gap-2 mb-4 bg-tactical-900 p-1.5 rounded-sm w-full">
+            <button id="tab-main-base" class="tab-btn bg-tactical-900 text-gray-400 hover:text-white transition-all">База</button>
+            <button id="tab-main-arsenal" class="tab-btn bg-tactical-900 text-gray-400 hover:text-white transition-all">Арсенал</button>
+            <button id="tab-main-full" class="tab-btn bg-tactical-900 text-gray-400 hover:text-white transition-all">Максимум</button>
+        </div>
+
+        <!-- Подменю Арсенала (Скрыто по умолчанию) -->
+        <div id="arsenal-submenu" class="w-full hidden mb-4">
+            <div class="grid grid-cols-3 gap-1.5 bg-tactical-900/50 p-2 rounded-sm border border-tactical-700">
+                <button class="subtab-btn arsenal-btn col-span-3 bg-tactical-accent text-white shadow-md font-bold mb-1" data-mode="arsenalAuto">Авто-комплекс (30 мин)</button>
+                <button class="subtab-btn arsenal-btn bg-tactical-700 text-gray-300 hover:bg-tactical-700" data-mode="stopframe">СТОП-КАДР</button>
+                <button class="subtab-btn arsenal-btn bg-tactical-700 text-gray-300 hover:bg-tactical-700" data-mode="act">ACT-Разделение</button>
+                <button class="subtab-btn arsenal-btn bg-tactical-700 text-gray-300 hover:bg-tactical-700" data-mode="rehearsal">Репетиция</button>
+                <button class="subtab-btn arsenal-btn bg-tactical-700 text-gray-300 hover:bg-tactical-700" data-mode="yoganidra">Yoga Nidra</button>
+                <button class="subtab-btn arsenal-btn bg-tactical-700 text-gray-300 hover:bg-tactical-700" data-mode="cold">Холод</button>
+                <button class="subtab-btn arsenal-btn bg-tactical-700 text-gray-300 hover:bg-tactical-700" data-mode="key">Ключ</button>
+            </div>
+        </div>
+
+        <div class="text-center mb-6 w-full mt-2">
+            <h1 class="text-xl sm:text-2xl font-bold text-white transition-all" id="mode-title">Загрузка...</h1>
+            <p class="text-sm text-gray-400 mt-1 transition-all min-h-[1.25rem]" id="mode-subtitle">Инициализация</p>
+
+            <!-- Селектор длительности сессии -->
+            <div id="duration-container" class="mt-4 border-t border-tactical-700 pt-4">
+                <div class="flex justify-center gap-2 flex-wrap" id="duration-buttons">
+                    <!-- База -->
+                    <button class="duration-btn bg-tactical-700 hover:bg-tactical-700 text-gray-300 px-4 py-1.5 rounded-sm text-sm font-medium transition-colors hidden" data-mode="base" data-duration="20">20 минут</button>
+                    <button class="duration-btn bg-tactical-700 hover:bg-tactical-700 text-gray-300 px-4 py-1.5 rounded-sm text-sm font-medium transition-colors hidden" data-mode="base" data-duration="40">40 минут</button>
+
+                    <!-- Арсенал -->
+                    <button class="duration-btn bg-tactical-700 hover:bg-tactical-700 text-gray-300 px-4 py-1.5 rounded-sm text-sm font-medium transition-colors hidden" data-mode="arsenal" data-duration="30">30 минут</button>
+
+                    <!-- Максимум -->
+                    <button class="duration-btn bg-tactical-700 hover:bg-tactical-700 text-gray-300 px-4 py-1.5 rounded-sm text-sm font-medium transition-colors hidden" data-mode="full" data-duration="50">50 минут</button>
+                    <button class="duration-btn bg-tactical-700 hover:bg-tactical-700 text-gray-300 px-4 py-1.5 rounded-sm text-sm font-medium transition-colors hidden" data-mode="full" data-duration="70">70 минут</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Контейнер таймера -->
+        <div class="timer-container" id="timer-box">
+            <svg class="progress-ring" viewBox="0 0 200 200">
+                <circle class="progress-ring__circle-bg" cx="100" cy="100" r="88"></circle>
+                <circle class="progress-ring__circle" id="progress-circle" cx="100" cy="100" r="88"></circle>
+            </svg>
+            <div class="phase-text uppercase" id="phase-text">Ожидание</div>
+            <div class="time-display" id="time-text">0:00</div>
+
+            <div id="session-time-left" class="text-sm text-tactical-accent mt-2 font-medium hidden">Осталось: 20:00</div>
+        </div>
+
+        <!-- Динамические инструкции -->
+        <div id="pmr-instructions" class="w-full mt-6 bg-tactical-900/50 p-4 rounded-sm border border-tactical-700 text-center min-h-[6.5rem] flex flex-col justify-center">
+            <h3 id="pmr-group" class="text-tactical-accent font-bold text-base mb-1">Ожидание старта</h3>
+            <p id="pmr-action" class="text-gray-300 text-sm leading-relaxed transition-all">Выберите программу и нажмите "Старт".</p>
+        </div>
+
+        <!-- Блок диктофона (Появляется в Арсенале) -->
+        <div id="recorder-container" class="w-full mt-4 bg-tactical-900/40 p-4 rounded-sm border border-tactical-700 hidden flex-col items-center">
+            <h3 class="text-tactical-accent font-bold text-sm mb-2 flex items-center gap-2">
+                🎤 Голосовые заметки
+            </h3>
+            <p class="text-xs text-gray-400 mb-3 text-center">Проговаривайте мысли вслух для нейросети (работает локально)</p>
+            <div class="flex gap-2 w-full mb-2">
+                <button id="btn-record" class="flex-1 bg-rose-500 hover:bg-rose-400 text-white text-sm font-bold py-2 px-3 rounded-sm transition-all flex justify-center items-center gap-2">
+                    <span id="record-dot" class="w-2 h-2 rounded bg-white hidden animate-pulse"></span>
+                    <span id="record-text">Начать запись</span>
+                </button>
+            </div>
+            <div id="recordings-list" class="w-full space-y-3 mt-2 max-h-40 overflow-y-auto hidden">
+                <!-- Сюда будут добавляться аудиофайлы -->
+            </div>
+        </div>
+
+        <!-- Кнопки управления -->
+        <div class="flex gap-4 mt-6 w-full">
+            <button id="btn-start" class="flex-1 bg-tactical-accent hover:bg-tactical-accent text-white font-bold py-3 px-4 rounded-sm transition-all shadow-lg shadow-tactical-accent/30 active:scale-95">
+                Старт
+            </button>
+            <button id="btn-stop" class="flex-1 bg-tactical-700 hover:bg-tactical-700 text-white font-bold py-3 px-4 rounded-sm transition-all active:scale-95" disabled>
+                Стоп
+            </button>
+        </div>
+
+        <div class="flex justify-between w-full mt-4 items-center px-1">
+            <button id="btn-reset" class="text-gray-400 hover:text-white transition-colors text-sm font-medium py-2 px-2 rounded-sm active:scale-95 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Сброс
+            </button>
+
+            <button id="btn-info" class="text-gray-400 hover:text-tactical-accent transition-colors text-sm font-medium py-2 px-2 rounded-sm active:scale-95 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Справочник
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Логика модального окна ---
+        const modal = document.getElementById('info-modal');
+        const modalContent = document.getElementById('modal-content');
+        const btnInfo = document.getElementById('btn-info');
+        const btnCloseModal = document.getElementById('btn-close-modal');
+
+        function openModal() {
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        btnInfo.addEventListener('click', openModal);
+        btnCloseModal.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+
+        // --- Логика фаз и режимов ---
+        const MODES = {
+            'hrv': (bpm) => {
+                const ms = (60 / bpm / 2) * 1000;
+                return [
+                    { id: 'inhale', name: 'ВДОХ', duration: ms, startFill: 0, endFill: 1, color: '#10b981' },
+                    { id: 'exhale', name: 'ВЫДОХ', duration: ms, startFill: 1, endFill: 0, color: '#a78bfa' }
+                ];
+            },
+            'sigh': () => {
+                return [
+                    { id: 'inhale1', name: 'ВДОХ (80%)', duration: 2000, startFill: 0, endFill: 0.8, color: '#10b981' },
+                    { id: 'inhale2', name: 'ДОВДОХ (20%)', duration: 500, startFill: 0.8, endFill: 1, color: '#0284c7' },
+                    { id: 'exhale', name: 'ДОЛГИЙ ВЫДОХ', duration: 5500, startFill: 1, endFill: 0, color: '#a78bfa' },
+                    { id: 'pause', name: 'ОБЫЧНОЕ ДЫХАНИЕ', duration: 8000, startFill: 0, endFill: 0, color: '#94a3b8' }
+                ];
+            },
+            'pmr': () => {
+                const groups = [
+                    { n: '1. Кисти и предплечья', on: 'Сожмите кулаки максимально (как стальные пружины).', off: 'Резко разожмите. Почувствуйте тепло и тяжесть в расслабленных руках.' },
+                    { n: '2. Бицепсы и плечи', on: 'Согните руки в локтях, напрягите бицепсы («покажите мускулы»).', off: 'Отпустите. Руки тяжёлые, расслабленные.' },
+                    { n: '3. Лицо', on: 'Зажмурьтесь. Сожмите челюсти. Наморщите лоб. Всё лицо в гримасу напряжения.', off: 'Лицо «стекает» вниз. Челюсть приоткрыта. Лоб гладкий.' },
+                    { n: '4. Шея и трапеции', on: 'Поднимите плечи к ушам максимально высоко («не знаю»).', off: 'Сбросьте. Плечи тяжело падают вниз.' },
+                    { n: '5. Грудь и спина', on: 'Сведите лопатки, расправьте грудь, максимально напрягите.', off: 'Отпустите. Расслабьтесь, дышите спокойно.' },
+                    { n: '6. Живот', on: 'Напрягите пресс — как ожидаете удар в солнечное сплетение. Твёрдый живот.', off: 'Расслабьте. Живот становится мягким.' },
+                    { n: '7. Ноги', on: 'Вытяните ноги, потяните носки на себя, напрягите бёдра и голени одновременно.', off: 'Отпустите. Ноги полностью расслаблены.' }
+                ];
+                let p = [];
+                groups.forEach(g => {
+                    p.push({ id: 'pmr-on', name: 'НАПРЯЖЕНИЕ', duration: 7000, startFill: 0, endFill: 1, color: '#f43f5e', title: g.n, desc: g.on });
+                    p.push({ id: 'pmr-off', name: 'РАССЛАБЛЕНИЕ', duration: 20000, startFill: 1, endFill: 0, color: '#10b981', title: g.n, desc: g.off });
+                });
+                p.push({ id: 'pmr-end', name: 'ФИНАЛ ПМР', duration: 15000, startFill: 0, endFill: 0, color: '#10b981', title: 'Завершение ПМР', desc: 'Сделайте 3 глубоких вдоха и выдоха. Потянитесь всем телом.'});
+                return p;
+            },
+            'space': (totalMs) => {
+                const pt = totalMs / 3;
+                return [
+                    { id: 'sp-1', name: 'ОСОЗНАНИЕ', duration: pt, startFill: 0, endFill: 1, color: '#10b981', title: 'ОСОЗНАНИЕ (Расширенное внимание)', desc: 'Остановитесь. Задайте себе вопросы без оценки: Какие сейчас мысли? Какие эмоции? Какие ощущения в теле?' },
+                    { id: 'sp-2', name: 'СОБИРАНИЕ', duration: pt, startFill: 0, endFill: 1, color: '#a78bfa', title: 'СОБИРАНИЕ (Суженное внимание)', desc: 'Направьте всё внимание на дыхание. Вдох... выдох. Если мысли уносят — мягко верните внимание на дыхание без раздражения.' },
+                    { id: 'sp-3', name: 'РАСШИРЕНИЕ', duration: pt, startFill: 0, endFill: 1, color: '#10b981', title: 'РАСШИРЕНИЕ (Расширенное внимание)', desc: 'Расширьте внимание на всё тело и позу. Затем на пространство вокруг: звуки, свет. Сделайте глубокий вдох-выдох.' }
+                ];
+            },
+            'base': (totalMs) => {
+                let is20 = totalMs <= 20 * 60 * 1000;
+                let sighTargetMs = is20 ? 3 * 60000 : 5 * 60000;
+                let hrvTargetMs = is20 ? 10 * 60000 : 20 * 60000;
+                let p = [];
+                let accumulatedMs = 0;
+
+                // 1. Физиологический вздох
+                p.push({ id: 'base-intro-1', name: 'ПОДГОТОВКА', duration: 10000, startFill: 0, endFill: 1, color: '#eab308', globalTitle: "Этап 1/4: Физиологический вздох", title: "Приготовьтесь", desc: "Сядьте удобно. Начинаем этап сброса стресса. Подготовьтесь к двойному вдоху носом." });
+                accumulatedMs += 10000;
+
+                let sighCycles = Math.floor((sighTargetMs - 10000) / 16000);
+                for(let i = 0; i < sighCycles; i++) {
+                    let cycle = MODES.sigh();
+                    cycle.forEach(c => {
+                        c.globalTitle = "Этап 1/4: Физиологический вздох";
+                        c.title = "Сброс острого стресса";
+                        c.desc = "Двойной вдох через нос (100%) и длинный, расслабленный выдох через рот.";
+                        p.push(c);
+                        accumulatedMs += c.duration;
+                    });
+                }
+
+                // 2. Резонансное дыхание
+                p.push({ id: 'base-trans-2', name: 'ПЕРЕХОД', duration: 10000, startFill: 0, endFill: 1, color: '#eab308', globalTitle: "Переход к Этапу 2", title: "Смена ритма", desc: "Дыхание выравнивается. Переходим к резонансному дыханию для балансировки нервной системы." });
+                accumulatedMs += 10000;
+
+                let hrvCycles = Math.floor((hrvTargetMs - 10000) / 10000);
+                for(let i = 0; i < hrvCycles; i++) {
+                    let cycle = MODES.hrv(6.0);
+                    cycle.forEach(c => {
+                        c.globalTitle = "Этап 2/4: Резонансное дыхание (ВСР)";
+                        c.title = "Баланс нервной системы";
+                        c.desc = "Ровное, непрерывное дыхание: 5 секунд мягкий вдох, 5 секунд мягкий выдох.";
+                        p.push(c);
+                        accumulatedMs += c.duration;
+                    });
+                }
+
+                // 3. ПМР
+                p.push({ id: 'base-trans-3', name: 'ПЕРЕХОД', duration: 10000, startFill: 0, endFill: 1, color: '#eab308', globalTitle: "Переход к Этапу 3", title: "Мышечная релаксация", desc: "Приготовьтесь к работе с телом. Будем по очереди напрягать и расслаблять группы мышц." });
+                accumulatedMs += 10000;
+
+                let pmrCycle = MODES.pmr();
+                pmrCycle.forEach(c => {
+                    c.globalTitle = "Этап 3/4: Мышечная релаксация (ПМР)";
+                    p.push(c);
+                    accumulatedMs += c.duration;
+                });
+
+                // 4. Space
+                let spaceRemaining = totalMs - accumulatedMs;
+                if (spaceRemaining > 10000) {
+                    p.push({ id: 'base-trans-4', name: 'ПЕРЕХОД', duration: 10000, startFill: 0, endFill: 1, color: '#eab308', globalTitle: "Переход к Этапу 4", title: "Пространство дыхания", desc: "Финальный этап интеграции. Переходим к практике осознанности." });
+                    accumulatedMs += 10000;
+                    spaceRemaining -= 10000;
+
+                    let spaceCycle = MODES.space(spaceRemaining);
+                    spaceCycle.forEach(c => {
+                        c.globalTitle = "Этап 4/4: Пространство дыхания";
+                        p.push(c);
+                    });
+                }
+
+                return p;
+            },
+            'arsenalAuto': () => {
+                const hour = new Date().getHours();
+                // Холод добавляется, если время >= 19:00 ИЛИ < 09:00
+                const isColdTime = (hour >= 19 || hour < 9);
+                let p = [];
+
+                // 1. Когнитивный блок (5 мин = 300s)
+                p.push({ id: 'aa-kog-1', name: 'ОЦЕНКА', duration: 60000, startFill: 0, endFill: 1, color: '#f43f5e', globalTitle: 'Этап 1/4: Когнитивный блок', title: 'Ситуация и Тело (СТОП-КАДР)', desc: 'Вспомните стрессовую ситуацию. Что произошло (только факты)? Что вы чувствуете в теле прямо сейчас?' });
+                p.push({ id: 'aa-kog-2', name: 'ПРОВЕРКА', duration: 120000, startFill: 0, endFill: 1, color: '#eab308', globalTitle: 'Этап 1/4: Когнитивный блок', title: 'Проверка и ACT-Разделение', desc: 'Скажите себе: «У меня есть мысль, что [моя тревога]...». Оцените вероятность худшего исхода. Это факт или страх?' });
+                p.push({ id: 'aa-kog-3', name: 'ДЕЙСТВИЕ', duration: 120000, startFill: 0, endFill: 1, color: '#3b82f6', globalTitle: 'Этап 1/4: Когнитивный блок', title: 'Коррекция и Действие', desc: 'Сформулируйте реалистичный взгляд. Какое одно конкретное действие вы можете сделать для решения проблемы прямо сейчас?' });
+
+                p.push({ id: 'aa-trans-1', name: 'ПЕРЕХОД', duration: 10000, startFill: 0, endFill: 1, color: '#eab308', globalTitle: "Переход к Этапу 2", title: "Смена фокуса", desc: "Когнитивный блок завершен. Переходим к ментальному программированию предстоящих событий." });
+
+                // 2. Ментальная репетиция (10 мин = 590s + 10s transition)
+                p.push({ id: 'aa-mr-1', name: 'СТАБИЛИЗАЦИЯ', duration: 60000, startFill: 0, endFill: 1, color: '#10b981', globalTitle: 'Этап 2/4: Ментальная репетиция', title: 'Настройка', desc: 'Закройте глаза. 3 физиологических вздоха. Представьте предстоящее важное событие (переговоры, выступление, звонок).' });
+                p.push({ id: 'aa-mr-2', name: 'ОПТИМУМ', duration: 120000, startFill: 0, endFill: 1, color: '#10b981', globalTitle: 'Этап 2/4: Ментальная репетиция', title: 'Оптимальный сценарий', desc: 'Всё идет по плану. Вы спокойны, собраны и уверены. Проживите этот успех в деталях (слова, реакции, чувства).' });
+                p.push({ id: 'aa-mr-3', name: 'СЛОЖНОСТЬ', duration: 180000, startFill: 0, endFill: 1, color: '#f43f5e', globalTitle: 'Этап 2/4: Ментальная репетиция', title: 'Сложный сценарий (Ключевой)', desc: 'Возникает неожиданное препятствие или агрессия. Ваш пульс растет. Вы делаете паузу, дышите и берете ситуацию под контроль.' });
+                p.push({ id: 'aa-mr-4', name: 'ПРОВАЛ', duration: 120000, startFill: 0, endFill: 1, color: '#eab308', globalTitle: 'Этап 2/4: Ментальная репетиция', title: 'Провальный сценарий', desc: 'Худший реалистичный исход. Ваши действия по минимизации ущерба. Вы выходите из ситуации с достоинством и четким plan B.' });
+                p.push({ id: 'aa-mr-5', name: 'ЗАВЕРШЕНИЕ', duration: 110000, startFill: 0, endFill: 1, color: '#10b981', globalTitle: 'Этап 2/4: Ментальная репетиция', title: 'Завершение', desc: 'Сделайте глубокий вдох. Мысленно скажите: «Я готов к любому варианту развития событий». Откройте глаза.' });
+
+                p.push({ id: 'aa-trans-2', name: 'ПЕРЕХОД', duration: 10000, startFill: 0, endFill: 1, color: '#eab308', globalTitle: "Переход к Этапу 3", title: "Работа с телом", desc: isColdTime ? "Приготовьтесь к мощной физиологической встряске (Холод)." : "Переходим к снятию нервного напряжения (Метод Ключ)." });
+
+                // 3. Интеграция (5 мин = 290s + 10s transition)
+                if (isColdTime) {
+                    p.push({ id: 'aa-c-1', name: 'ПОДГОТОВКА', duration: 60000, startFill: 0, endFill: 1, color: '#0284c7', globalTitle: 'Этап 3/4: Физиологическая интеграция (Холод)', title: 'Подготовка к холоду', desc: 'Включите ледяную воду в душе. Приготовьтесь к контролируемому стрессу. Ваша задача — управлять дыханием.' });
+                    p.push({ id: 'aa-c-2', name: 'ЭКСПОЗИЦИЯ', duration: 120000, startFill: 0, endFill: 1, color: '#0369a1', globalTitle: 'Этап 3/4: Физиологическая интеграция (Холод)', title: 'Холодовой стресс', desc: 'Зайдите под воду. Дышите ровно (вдохи носом, выдохи ртом). Подавляйте физиологическую панику через ментальный контроль.' });
+                    p.push({ id: 'aa-c-3', name: 'ВЫХОД', duration: 110000, startFill: 0, endFill: 1, color: '#10b981', globalTitle: 'Этап 3/4: Физиологическая интеграция', title: 'Восстановление', desc: 'Выйдите из душа. Разотритесь полотенцем. Почувствуйте прилив энергии и норадреналина.' });
+                } else {
+                    p.push({ id: 'aa-k-1', name: 'РАСХОЖДЕНИЕ', duration: 60000, startFill: 0, endFill: 1, color: '#10b981', globalTitle: 'Этап 3/4: Физиологическая интеграция (Ключ)', title: 'Расхождение рук', desc: 'Встаньте. Вытяните руки перед собой. Вообразите, что они расходятся в стороны без мышечного усилия. Ждите идеомоторный отклик.' });
+                    p.push({ id: 'aa-k-2', name: 'СХОЖДЕНИЕ', duration: 60000, startFill: 0, endFill: 1, color: '#a78bfa', globalTitle: 'Этап 3/4: Физиологическая интеграция (Ключ)', title: 'Схождение рук', desc: 'Разведите руки. Представьте, что они притягиваются друг к другу, как магниты.' });
+                    p.push({ id: 'aa-k-3', name: 'ВСПЛЫВАНИЕ', duration: 60000, startFill: 0, endFill: 1, color: '#10b981', globalTitle: 'Этап 3/4: Физиологическая интеграция (Ключ)', title: 'Всплывание руки', desc: 'Опустите руки. Представьте, что одна рука стала лёгкой как воздушный шар и сама всплывает вверх.' });
+                    p.push({ id: 'aa-k-4', name: 'МАЯТНИК', duration: 50000, startFill: 0, endFill: 1, color: '#f43f5e', globalTitle: 'Этап 3/4: Физиологическая интеграция (Ключ)', title: 'Покачивание тела', desc: 'Представьте лёгкое покачивание всего тела вперёд-назад. Позвольте телу двигаться за воображением.' });
+                    p.push({ id: 'aa-k-5', name: 'ФОКУС', duration: 60000, startFill: 0, endFill: 1, color: '#eab308', globalTitle: 'Этап 3/4: Физиологическая интеграция (Ключ)', title: 'Синхронизация', desc: 'Продолжайте то движение, которое получилось лучше всего, до чувства глубокого, трансового спокойствия.' });
+                }
+
+                p.push({ id: 'aa-trans-3', name: 'ПЕРЕХОД', duration: 10000, startFill: 0, endFill: 1, color: '#eab308', globalTitle: "Переход к Этапу 4", title: "Глубокое восстановление", desc: "Переходим к финальному этапу — Yoga Nidra (NSDR)." });
+
+                // 4. Yoga Nidra (10 мин = 590s + 10s transition)
+                p.push({ id: 'aa-yn-1', name: 'ПОДГОТОВКА', duration: 60000, startFill: 0, endFill: 1, color: '#10b981', globalTitle: 'Этап 4/4: Yoga Nidra (NSDR)', title: 'Подготовка к NSDR', desc: 'Лягте на спину, руки вдоль тела. Включите выбранную аудиозапись (10-минутный NSDR протокол).' });
+                p.push({ id: 'aa-yn-2', name: 'ПРАКТИКА', duration: 470000, startFill: 0, endFill: 1, color: '#a78bfa', globalTitle: 'Этап 4/4: Yoga Nidra (NSDR)', title: 'Глубокое расслабление', desc: 'Следуйте за голосом диктора. Позвольте телу уснуть, сохраняя легкое фоновое сознание.' });
+                p.push({ id: 'aa-yn-3', name: 'ВОЗВРАТ', duration: 60000, startFill: 0, endFill: 1, color: '#10b981', globalTitle: 'Этап 4/4: Yoga Nidra (NSDR)', title: 'Возвращение', desc: 'Практика завершена. Не вскакивайте. Просто полежите спокойно. Затем потянитесь и медленно сядьте.' });
+
+                return p;
+            },
+            'stopframe': () => [
+                { id: 'sf-s', name: 'СИТУАЦИЯ', duration: 60000, startFill: 0, endFill: 1, color: '#10b981', title: 'С - Ситуация', desc: 'Что произошло? Вспомните событие. Только сухие факты. Без интерпретаций.' },
+                { id: 'sf-t', name: 'ТЕЛО', duration: 60000, startFill: 0, endFill: 1, color: '#a78bfa', title: 'Т - Тело', desc: 'Что происходит в теле? Учащенный пульс, задержка дыхания, напряжение в челюсти или плечах?' },
+                { id: 'sf-o', name: 'ОЦЕНКА', duration: 60000, startFill: 0, endFill: 1, color: '#f43f5e', title: 'О - Оценка', desc: 'Что я себе сказал? Какая первая автоматическая (пугающая) мысль пришла в голову?' },
+                { id: 'sf-p', name: 'ПРОВЕРКА', duration: 120000, startFill: 0, endFill: 1, color: '#eab308', title: 'П - Проверка', desc: 'Это факт или интерпретация? Какова реальная вероятность худшего (0-100%)? Если это случится — это конец или просто трудность?' },
+                { id: 'sf-k', name: 'КОРРЕКЦИЯ', duration: 60000, startFill: 0, endFill: 1, color: '#10b981', title: 'К - Коррекция', desc: 'Сформулируйте более точную и реалистичную мысль на основе проверки.' },
+                { id: 'sf-a', name: 'ДЕЙСТВИЕ', duration: 60000, startFill: 0, endFill: 1, color: '#3b82f6', title: 'А - Действие', desc: 'Что конкретно я должен сделать прямо сейчас, исходя из новой реалистичной оценки?' },
+                { id: 'sf-d', name: 'ДЫХАНИЕ', duration: 60000, startFill: 0, endFill: 1, color: '#8b5cf6', title: 'Д - Дыхание', desc: 'Выполните 3 физиологических вздоха для стабилизации нервной системы перед действием.' },
+                { id: 'sf-r', name: 'РЕЗУЛЬТАТ', duration: 60000, startFill: 0, endFill: 1, color: '#14b8a6', title: 'Р - Результат', desc: 'Мысленно или в дневнике зафиксируйте ожидаемый или фактический результат.' }
+            ],
+            'act': () => [
+                { id: 'act-1', name: 'РАМКА 1', duration: 20000, startFill: 0, endFill: 1, color: '#f43f5e', title: 'Шаг 1: Дистанцирование', desc: 'Заметьте пугающую, но правдивую мысль. Скажите себе: «У меня есть мысль, что [вставьте вашу мысль]».' },
+                { id: 'act-2', name: 'РАМКА 2', duration: 20000, startFill: 0, endFill: 1, color: '#eab308', title: 'Шаг 2: Наблюдение', desc: 'Теперь скажите: «Я ЗАМЕЧАЮ, что у меня есть мысль, что...». Почувствуйте дистанцию. Вы — не ваша мысль.' },
+                { id: 'act-3', name: 'РАДИО', duration: 45000, startFill: 0, endFill: 1, color: '#10b981', title: 'Радио Паника', desc: 'Представьте поток тревоги как вещание радио. «О, опять Радио Катастрофа. Послушаем позже». Переключите внимание на текущее действие.' },
+                { id: 'act-4', name: 'ГОТОВНОСТЬ', duration: 60000, startFill: 0, endFill: 1, color: '#10b981', title: 'Ценностный компас', desc: 'Готов ли я испытывать этот дискомфорт ради движения к моим ценностям и целям? Ответьте "Да" и продолжайте работу.' }
+            ],
+            'rehearsal': () => [
+                { id: 'reh-1', name: 'СТАБИЛИЗАЦИЯ', duration: 120000, startFill: 0, endFill: 1, color: '#10b981', title: 'Шаг 1: Стабилизация', desc: 'Сделайте 3 физиологических вздоха + дышите ровно. Закройте глаза. Представьте предстоящее событие.' },
+                { id: 'reh-2', name: 'ОПТИМУМ', duration: 120000, startFill: 0, endFill: 1, color: '#10b981', title: 'Сценарий А: Оптимальный', desc: 'Представьте место, себя. Вы спокойны. Ключевые слова, позитивная реакция оппонента, успех. Проживите это.' },
+                { id: 'reh-3', name: 'СЛОЖНОСТЬ', duration: 120000, startFill: 0, endFill: 1, color: '#f43f5e', title: 'Сценарий Б: Сложный', desc: 'Возникает провокация или препятствие. Пульс растёт — ЗАМЕТЬТЕ ЭТО. Вздох. Пауза. Вы перестраиваетесь и контролируете ситуацию.' },
+                { id: 'reh-4', name: 'ПРОВАЛ', duration: 120000, startFill: 0, endFill: 1, color: '#eab308', title: 'Сценарий В: Провальный', desc: 'Худший реалистичный исход. Ваши действия по минимизации ущерба. Вы выходите с достоинством. Извлекаете опыт.' },
+                { id: 'reh-5', name: 'ЗАВЕРШЕНИЕ', duration: 60000, startFill: 0, endFill: 1, color: '#10b981', title: 'Шаг 4: Завершение', desc: 'Сделайте 3 глубоких вдоха. Мысленно скажите: «Я готов к любому варианту». Медленно откройте глаза.' }
+            ],
+            'yoganidra': () => [
+                { id: 'yn-1', name: 'ПОДГОТОВКА', duration: 60000, startFill: 0, endFill: 1, color: '#10b981', title: 'Подготовка к NSDR', desc: 'Лягте на спину, руки вдоль тела. Включите выбранную аудиозапись (NSDR Huberman или Insight Timer).' },
+                { id: 'yn-2', name: 'ПРАКТИКА', duration: 15 * 60000, startFill: 0, endFill: 1, color: '#a78bfa', title: 'Глубокое расслабление', desc: 'Следуйте за голосом диктора. Позвольте телу уснуть, сохраняя легкое фоновое сознание.' },
+                { id: 'yn-3', name: 'ВОЗВРАТ', duration: 60000, startFill: 0, endFill: 1, color: '#10b981', title: 'Возвращение', desc: 'Практика завершена. Не вскакивайте. Просто полежите спокойно. Затем потянитесь и медленно сядьте.' }
+            ],
+            'cold': () => [
+                { id: 'cold-1', name: 'НАСТРОЙКА', duration: 10000, startFill: 0, endFill: 1, color: '#10b981', title: 'Подготовка', desc: 'После теплого душа переключите кран на самую холодную воду.' },
+                { id: 'cold-2', name: 'ЭКСПОЗИЦИЯ', duration: 60000, startFill: 0, endFill: 1, color: '#0284c7', title: 'Холодовой стресс', desc: 'Выдержите ледяную воду. Практикуйте физиологический вздох. Контролируйте свою реакцию на стресс.' }
+            ],
+            'key': () => [
+                { id: 'key-1', name: 'РАСХОЖДЕНИЕ', duration: 60000, startFill: 0, endFill: 1, color: '#10b981', title: 'Приём А: Расхождение', desc: 'Встаньте. Закройте глаза. Руки перед собой. Вообразите, что они расходятся в стороны. Без мышечного усилия.' },
+                { id: 'key-2', name: 'СХОЖДЕНИЕ', duration: 60000, startFill: 0, endFill: 1, color: '#a78bfa', title: 'Приём Б: Схождение', desc: 'Разведите руки. Представьте, что они притягиваются друг к другу, как магниты.' },
+                { id: 'key-3', name: 'ВСПЛЫВАНИЕ', duration: 60000, startFill: 0, endFill: 1, color: '#10b981', title: 'Приём В: Всплывание', desc: 'Опустите руки. Представьте, что одна рука стала лёгкой как воздушный шар и сама всплывает вверх.' },
+                { id: 'key-4', name: 'МАЯТНИК', duration: 60000, startFill: 0, endFill: 1, color: '#f43f5e', title: 'Приём Г: Покачивание', desc: 'Представьте лёгкое покачивание всего тела вперёд-назад. Позвольте телу двигаться за воображением.' },
+                { id: 'key-5', name: 'СИНХРОНИЗАЦИЯ', duration: 60000, startFill: 0, endFill: 1, color: '#eab308', title: 'Ваш "Ключ"', desc: 'Выберите приём с самым сильным идеомоторным откликом и продолжайте его. Дождитесь чувства полного спокойствия.' }
+            ],
+            'full': (totalMs) => {
+                let is50 = totalMs <= 50 * 60 * 1000;
+                let baseTime = is50 ? 20 * 60000 : 40 * 60000;
+
+                // Уменьшаем время Базы на 10 сек, чтобы компенсировать время перехода и ровно уложиться в 50/70 мин
+                let p1 = MODES.base(baseTime - 10000);
+                p1.forEach(c => {
+                    c.globalTitle = "ЧАСТЬ I (БАЗА) | " + c.globalTitle;
+                });
+
+                let p2 = MODES.arsenalAuto();
+                p2.forEach(c => {
+                    c.globalTitle = "ЧАСТЬ II (АРСЕНАЛ) | " + c.globalTitle;
+                });
+
+                let trans = { id: 'full-trans', name: 'ПЕРЕХОД', duration: 10000, startFill: 0, endFill: 1, color: '#eab308', globalTitle: "СМЕНА БЛОКОВ", title: "Экватор тренировки", desc: "Базовая часть завершена. Переходим к продвинутым когнитивным и ментальным техникам Расширенного Арсенала." };
+
+                return p1.concat([trans]).concat(p2);
+            }
+        };
+
+        // --- Элементы DOM ---
+        const circle = document.getElementById('progress-circle');
+        const timeText = document.getElementById('time-text');
+        const phaseText = document.getElementById('phase-text');
+        const timerBox = document.getElementById('timer-box');
+        const btnStart = document.getElementById('btn-start');
+        const btnStop = document.getElementById('btn-stop');
+        const btnReset = document.getElementById('btn-reset');
+
+        const modeTitle = document.getElementById('mode-title');
+        const modeSubtitle = document.getElementById('mode-subtitle');
+        const durationButtons = document.querySelectorAll('.duration-btn');
+        const sessionTimeLeftText = document.getElementById('session-time-left');
+
+        const pmrInstructions = document.getElementById('pmr-instructions');
+        const pmrGroupText = document.getElementById('pmr-group');
+        const pmrActionText = document.getElementById('pmr-action');
+
+        const tabMainBase = document.getElementById('tab-main-base');
+        const tabMainArsenal = document.getElementById('tab-main-arsenal');
+        const tabMainFull = document.getElementById('tab-main-full');
+        const arsenalSubmenu = document.getElementById('arsenal-submenu');
+        const arsenalBtns = document.querySelectorAll('.arsenal-btn');
+        const durationContainer = document.getElementById('duration-container');
+
+        // DOM Диктофона
+        const recorderContainer = document.getElementById('recorder-container');
+        const btnRecord = document.getElementById('btn-record');
+        const recordDot = document.getElementById('record-dot');
+        const recordText = document.getElementById('record-text');
+        const recordingsList = document.getElementById('recordings-list');
+
+        // Настройки таймера
+        let currentTrainingType = 'base';
+        let sessionLimitMs = 20 * 60000;
+
+        let phases = MODES.base(sessionLimitMs);
+        let currentPhaseIndex = 0;
+
+        // Расчет длины окружности для SVG
+        const radius = circle.r.baseVal.value;
+        const circumference = radius * 2 * Math.PI;
+        circle.style.strokeDasharray = `${circumference} ${circumference}`;
+        circle.style.strokeDashoffset = circumference;
+
+        // Переменные состояния анимации
+        let isRunning = false;
+        let startTime = 0;
+        let animationFrameId;
+        let pausedElapsedTime = 0;
+        let totalSessionTime = 0;
+        let lastFrameTime = 0;
+
+        // Переменные диктофона
+        let mediaRecorder;
+        let audioChunks = [];
+        let isVoiceRecording = false;
+
+        // --- Установка режима ---
+        function setTrainingType(type) {
+            currentTrainingType = type;
+            resetTimer();
+
+            [tabMainBase, tabMainArsenal, tabMainFull].forEach(tab => {
+                tab.classList.replace('bg-tactical-accent', 'bg-tactical-900');
+                tab.classList.replace('text-white', 'text-gray-400');
+                tab.classList.remove('shadow-md');
+            });
+
+            // Определяем активную главную вкладку
+            let activeTab = tabMainBase;
+            if (type === 'full') activeTab = tabMainFull;
+            if (type === 'arsenal' || type === 'arsenalAuto' || ['stopframe', 'act', 'rehearsal', 'yoganidra', 'cold', 'key'].includes(type)) {
+                activeTab = tabMainArsenal;
+            }
+
+            activeTab.classList.replace('bg-tactical-900', 'bg-tactical-accent');
+            activeTab.classList.replace('text-gray-400', 'text-white');
+            activeTab.classList.add('shadow-md');
+
+            // Управление меню и кнопками времени
+            durationButtons.forEach(b => b.classList.add('hidden'));
+
+            // Логика видимости диктофона
+            if (activeTab === tabMainArsenal || activeTab === tabMainFull) {
+                recorderContainer.classList.remove('hidden');
+                recorderContainer.classList.add('flex');
+            } else {
+                recorderContainer.classList.add('hidden');
+                recorderContainer.classList.remove('flex');
+            }
+
+            if (type === 'base') {
+                arsenalSubmenu.classList.add('hidden');
+                durationContainer.classList.remove('hidden');
+                document.querySelector('[data-mode="base"][data-duration="20"]').classList.remove('hidden');
+                document.querySelector('[data-mode="base"][data-duration="40"]').classList.remove('hidden');
+
+                modeTitle.textContent = `Базовая подготовка`;
+                modeSubtitle.textContent = `Комплексная программа (4 этапа)`;
+
+                if (sessionLimitMs !== 20*60000 && sessionLimitMs !== 40*60000) setDuration(20);
+                else setDuration(sessionLimitMs / 60000);
+
+            } else if (activeTab === tabMainArsenal) {
+                arsenalSubmenu.classList.remove('hidden');
+                durationContainer.classList.add('hidden');
+
+                let actualMode = type === 'arsenal' ? 'arsenalAuto' : type;
+
+                arsenalBtns.forEach(b => {
+                    if (b.dataset.mode === actualMode) {
+                        b.classList.remove('bg-tactical-700', 'text-gray-300');
+                        b.classList.add('bg-tactical-accent', 'text-white', 'shadow-md');
+                    } else {
+                        b.classList.remove('bg-tactical-accent', 'text-white', 'shadow-md');
+                        b.classList.add('bg-tactical-700', 'text-gray-300');
+                    }
+                });
+
+                if (actualMode === 'arsenalAuto') {
+                    document.querySelector('[data-mode="arsenal"][data-duration="30"]').classList.remove('hidden');
+                    durationContainer.classList.remove('hidden');
+
+                    const isColdTime = (new Date().getHours() >= 19 || new Date().getHours() < 9);
+                    modeTitle.textContent = `Расширенный Арсенал`;
+                    modeSubtitle.textContent = `Автоматическая программа (30 мин)`;
+                    phases = MODES.arsenalAuto();
+                    setDuration(30);
+                } else {
+                    phases = MODES[actualMode]();
+                    sessionLimitMs = 0;
+
+                    const titles = {
+                        'stopframe': ['СТОП-КАДР', 'Когнитивное переструктурирование'],
+                        'act': ['ACT-Разделение', 'Работа с парализующими мыслями'],
+                        'rehearsal': ['Ментальная репетиция', 'Прогон предстоящей операции'],
+                        'yoganidra': ['Yoga Nidra (NSDR)', 'Глубокое восстановление (требуется аудио)'],
+                        'cold': ['Холодовая экспозиция', 'Стресс-инокуляция'],
+                        'key': ['Метод "Ключ"', 'Поиск идеомоторного переключения']
+                    };
+                    modeTitle.textContent = titles[actualMode][0];
+                    modeSubtitle.textContent = titles[actualMode][1];
+                }
+
+            } else if (type === 'full') {
+                arsenalSubmenu.classList.add('hidden');
+                durationContainer.classList.remove('hidden');
+                document.querySelector('[data-mode="full"][data-duration="50"]').classList.remove('hidden');
+                document.querySelector('[data-mode="full"][data-duration="70"]').classList.remove('hidden');
+
+                const isColdTime = (new Date().getHours() >= 19 || new Date().getHours() < 9);
+                modeTitle.textContent = `Максимум (База + Арсенал)`;
+                modeSubtitle.textContent = `Полная интеграция ` + (isColdTime ? `(+ Холод)` : ``);
+
+                if (sessionLimitMs !== 50*60000 && sessionLimitMs !== 70*60000) setDuration(70);
+                else setDuration(sessionLimitMs / 60000);
+            }
+
+            if (phases && phases.length > 0) {
+                pmrGroupText.textContent = "Ожидание старта";
+                pmrActionText.textContent = `Нажмите "Старт", чтобы начать: ${modeTitle.textContent}.`;
+            }
+
+            updateUI(0);
+        }
+
+        // Вкладки верхнего уровня
+        tabMainBase.addEventListener('click', () => setTrainingType('base'));
+        tabMainArsenal.addEventListener('click', () => setTrainingType('arsenalAuto'));
+        tabMainFull.addEventListener('click', () => setTrainingType('full'));
+
+        // Кнопки подменю Арсенала
+        arsenalBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                setTrainingType(e.target.dataset.mode);
+            });
+        });
+
+        // --- Обработчики кнопок ---
+        function setDuration(minutes) {
+            sessionLimitMs = minutes * 60 * 1000;
+
+            durationButtons.forEach(b => {
+                b.classList.remove('bg-tactical-accent', 'text-white', 'shadow-lg', 'shadow-tactical-accent/20');
+                b.classList.add('bg-tactical-700', 'text-gray-300');
+
+                if (b.dataset.mode === currentTrainingType || (currentTrainingType === 'arsenalAuto' && b.dataset.mode === 'arsenal')) {
+                    if (parseInt(b.dataset.duration) === minutes) {
+                        b.classList.remove('bg-tactical-700', 'text-gray-300');
+                        b.classList.add('bg-tactical-accent', 'text-white', 'shadow-lg', 'shadow-tactical-accent/20');
+                    }
+                }
+            });
+
+            if (currentTrainingType === 'base') phases = MODES.base(sessionLimitMs);
+            else if (currentTrainingType === 'arsenalAuto') phases = MODES.arsenalAuto();
+            else if (currentTrainingType === 'full') phases = MODES.full(sessionLimitMs);
+
+            resetTimer();
+        }
+
+        durationButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                setDuration(parseInt(e.target.dataset.duration));
+            });
+        });
+
+        // --- Логика диктофона ---
+        btnRecord.addEventListener('click', async () => {
+            if (!isVoiceRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+
+                    mediaRecorder.ondataavailable = e => {
+                        if (e.data.size > 0) audioChunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        audioChunks = [];
+                        const audioUrl = URL.createObjectURL(audioBlob);
+
+                        const audioEl = document.createElement('audio');
+                        audioEl.controls = true;
+                        audioEl.src = audioUrl;
+                        audioEl.className = "w-full h-8";
+
+                        const aEl = document.createElement('a');
+                        aEl.href = audioUrl;
+                        const dateStr = new Date().toLocaleTimeString().replace(/:/g, '-');
+                        aEl.download = `VoiceNote_${dateStr}.webm`;
+                        aEl.innerHTML = `💾 Скачать (${dateStr})`;
+                        aEl.className = "text-xs font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-900/30 px-2 py-1 rounded transition-colors";
+
+                        const wrapper = document.createElement('div');
+                        wrapper.className = "bg-tactical-800 p-2 rounded-sm flex flex-col gap-2 items-end border border-tactical-700";
+                        wrapper.appendChild(audioEl);
+                        wrapper.appendChild(aEl);
+
+                        recordingsList.appendChild(wrapper);
+                        recordingsList.classList.remove('hidden');
+                    };
+
+                    mediaRecorder.start();
+                    isVoiceRecording = true;
+
+                    recordText.textContent = "Остановить запись";
+                    recordDot.classList.remove('hidden');
+                    btnRecord.classList.replace('bg-rose-500', 'bg-tactical-700');
+                    btnRecord.classList.replace('hover:bg-rose-400', 'hover:bg-tactical-700');
+
+                } catch (err) {
+                    console.error("Ошибка доступа к микрофону:", err);
+                    alert("Не удалось получить доступ к микрофону. Проверьте разрешения в настройках браузера.");
+                }
+            } else {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isVoiceRecording = false;
+
+                recordText.textContent = "Начать запись";
+                recordDot.classList.add('hidden');
+                btnRecord.classList.replace('bg-tactical-700', 'bg-rose-500');
+                btnRecord.classList.replace('hover:bg-tactical-700', 'hover:bg-rose-400');
+            }
+        });
+
+        // Функция обновления UI
+        function updateUI(elapsed) {
+            const phase = phases[currentPhaseIndex];
+            if(!phase) return;
+
+            const displayTime = Math.max(0, Math.min(elapsed, phase.duration));
+
+            // Динамическое обновление подзаголовка
+            if (phase.globalTitle && modeSubtitle.textContent !== phase.globalTitle) {
+                modeSubtitle.textContent = phase.globalTitle;
+            }
+
+            // Форматирование времени
+            const timeLeft = phase.duration - displayTime;
+
+            if (timeLeft >= 60000) {
+                const m = Math.floor(timeLeft / 60000);
+                const s = Math.floor((timeLeft % 60000) / 1000);
+                timeText.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+            } else {
+                timeText.textContent = Math.ceil(timeLeft / 1000).toString();
+            }
+
+            // Инструкции
+            if (isRunning || pausedElapsedTime > 0) {
+                if (phase.title || phase.desc) {
+                    pmrGroupText.textContent = phase.title || '';
+                    pmrActionText.textContent = phase.desc || '';
+                }
+
+                if (phaseText.textContent !== phase.name) {
+                    phaseText.textContent = phase.name;
+                    phaseText.style.color = phase.color;
+                }
+            }
+
+            const progress = displayTime / phase.duration;
+
+            // Интерполяция заполнения кольца
+            const currentFill = phase.startFill + (phase.endFill - phase.startFill) * progress;
+            const offset = circumference - (currentFill * circumference);
+
+            circle.style.strokeDashoffset = offset;
+            circle.style.stroke = (isRunning || pausedElapsedTime > 0) ? phase.color : '#334155';
+        }
+
+        // Главный цикл анимации
+        function loop(timestamp) {
+            if (!isRunning) return;
+
+            if (!startTime) {
+                startTime = timestamp - pausedElapsedTime;
+                lastFrameTime = timestamp;
+            }
+
+            const delta = timestamp - lastFrameTime;
+            lastFrameTime = timestamp;
+            totalSessionTime += delta;
+
+            // Отображение общего лимита времени
+            if (sessionLimitMs > 0) {
+                const timeLeft = Math.max(0, sessionLimitMs - totalSessionTime);
+                const minutes = Math.floor(timeLeft / 60000);
+                const seconds = Math.floor((timeLeft % 60000) / 1000);
+                sessionTimeLeftText.textContent = `Осталось: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                sessionTimeLeftText.classList.remove('hidden');
+            } else {
+                sessionTimeLeftText.classList.add('hidden');
+            }
+
+            let elapsed = timestamp - startTime;
+            const currentPhaseDef = phases[currentPhaseIndex];
+
+            // Переход к следующей фазе
+            if (elapsed >= currentPhaseDef.duration) {
+                const overshot = elapsed - currentPhaseDef.duration;
+                startTime = timestamp - overshot;
+                elapsed = overshot;
+
+                currentPhaseIndex++;
+
+                // Проверка завершения
+                if (currentPhaseIndex >= phases.length) {
+                    currentPhaseIndex = phases.length - 1;
+                    updateUI(currentPhaseDef.duration);
+                    stopTimer();
+                    phaseText.textContent = "ЗАВЕРШЕНО";
+                    phaseText.style.color = '#10b981';
+                    circle.style.stroke = '#10b981';
+
+                    pmrGroupText.textContent = "Тренировка окончена";
+                    pmrActionText.textContent = "Отличная работа! Данные сохранены в ваш нейронный профиль.";
+                    return;
+                }
+            }
+
+            updateUI(elapsed);
+            animationFrameId = requestAnimationFrame(loop);
+        }
+
+        // Управление
+        function startTimer() {
+            if (isRunning) return;
+            isRunning = true;
+            startTime = 0;
+
+            btnStart.disabled = true;
+            btnStart.classList.replace('bg-tactical-accent', 'bg-tactical-700');
+            btnStart.classList.replace('hover:bg-tactical-accent', 'hover:bg-tactical-700');
+            btnStart.classList.remove('shadow-tactical-accent/30');
+
+            btnStop.disabled = false;
+            btnStop.classList.replace('bg-tactical-700', 'bg-rose-500');
+            btnStop.classList.replace('hover:bg-tactical-700', 'hover:bg-rose-400');
+            btnStop.classList.add('shadow-rose-500/30');
+
+            animationFrameId = requestAnimationFrame(loop);
+        }
+
+        function stopTimer() {
+            if (!isRunning) return;
+            isRunning = false;
+            cancelAnimationFrame(animationFrameId);
+
+            let currentElapsed = (performance.now() - startTime);
+            if(startTime === 0) currentElapsed = pausedElapsedTime;
+            pausedElapsedTime = currentElapsed;
+
+            btnStart.disabled = false;
+            btnStart.textContent = "Продолжить";
+            btnStart.classList.replace('bg-tactical-700', 'bg-tactical-accent');
+            btnStart.classList.replace('hover:bg-tactical-700', 'hover:bg-tactical-accent');
+            btnStart.classList.add('shadow-tactical-accent/30');
+
+            btnStop.disabled = true;
+            btnStop.classList.replace('bg-rose-500', 'bg-tactical-700');
+            btnStop.classList.replace('hover:bg-rose-400', 'hover:bg-tactical-700');
+            btnStop.classList.remove('shadow-rose-500/30');
+        }
+
+        function resetTimer() {
+            isRunning = false;
+            cancelAnimationFrame(animationFrameId);
+            startTime = 0;
+            pausedElapsedTime = 0;
+            currentPhaseIndex = 0;
+            totalSessionTime = 0;
+            lastFrameTime = 0;
+
+            if (sessionLimitMs > 0) {
+                const minutes = Math.floor(sessionLimitMs / 60000);
+                sessionTimeLeftText.textContent = `Осталось: ${minutes}:00`;
+                sessionTimeLeftText.classList.remove('hidden');
+            } else {
+                sessionTimeLeftText.classList.add('hidden');
+            }
+
+            phaseText.textContent = "Ожидание";
+            phaseText.style.color = "#10b981";
+
+            if (phases && phases.length > 0) {
+                pmrGroupText.textContent = "Ожидание старта";
+                pmrActionText.textContent = `Нажмите "Старт", чтобы начать: ${modeTitle.textContent}.`;
+            }
+
+            updateUI(0);
+
+            btnStart.disabled = false;
+            btnStart.textContent = "Старт";
+            btnStart.classList.replace('bg-tactical-700', 'bg-tactical-accent');
+            btnStart.classList.replace('hover:bg-tactical-700', 'hover:bg-tactical-accent');
+            btnStart.classList.add('shadow-tactical-accent/30');
+
+            btnStop.disabled = true;
+            btnStop.classList.replace('bg-rose-500', 'bg-tactical-700');
+            btnStop.classList.replace('hover:bg-rose-400', 'hover:bg-tactical-700');
+            btnStop.classList.remove('shadow-rose-500/30');
+
+            timerBox.classList.remove('pulse-animation');
+        }
+
+        btnStart.addEventListener('click', startTimer);
+        btnStop.addEventListener('click', stopTimer);
+        btnReset.addEventListener('click', resetTimer);
+
+        // Инициализация
+        setTrainingType('base');
+    </script>
+</body>
+</html>
