@@ -1,10 +1,27 @@
-from flask import Flask, render_template, request, jsonify
-import sqlite3
-import json
 import os
+import sys
+import json
+import sqlite3
+import threading
+import time
 
-app = Flask(__name__)
-DB_FILE = 'data.db'
+# Flask imports
+from flask import Flask, render_template, request, jsonify
+
+# Pywebview fallback
+try:
+    import webview
+    USE_WEBVIEW = True
+except ImportError:
+    USE_WEBVIEW = False
+
+# Setup App Dir and DB
+user_home = os.path.expanduser('~')
+app_dir = os.path.join(user_home, '.perimeter_app')
+if not os.path.exists(app_dir):
+    os.makedirs(app_dir)
+
+DB_FILE = os.path.join(app_dir, 'data.db')
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -35,6 +52,13 @@ def save_data(app_name, data):
     conn.commit()
     conn.close()
 
+# PyInstaller sets sys.frozen, so we need to point Flask to the correct bundled templates dir
+if getattr(sys, 'frozen', False):
+    template_folder = os.path.join(sys._MEIPASS, 'templates')
+    app = Flask(__name__, template_folder=template_folder, static_folder=template_folder)
+else:
+    app = Flask(__name__)
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -62,6 +86,32 @@ def api_save_data(app_name):
     save_data(app_name, data)
     return jsonify({'status': 'success'})
 
+def start_flask(port):
+    # Run the server with werkzeug serving logic
+    from werkzeug.serving import make_server
+    import logging
+    # Disable werkzeug logs to prevent console spam in exe
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+
+    server = make_server('127.0.0.1', port, app)
+    server.serve_forever()
+
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = 5000
+
+    if USE_WEBVIEW:
+        # Start Flask server in a daemon thread so it closes when webview closes
+        flask_thread = threading.Thread(target=start_flask, args=(port,), daemon=True)
+        flask_thread.start()
+
+        # Wait a second to ensure server is bound
+        time.sleep(1)
+
+        # Start PyWebView UI
+        webview.create_window('Оперативный Дашборд (ПЕРИМЕТР / КПТ / ТАЙМЕР)', f'http://127.0.0.1:{port}', width=1280, height=800)
+        webview.start()
+    else:
+        # Fallback if pywebview isn't installed
+        app.run(debug=True, host='127.0.0.1', port=port)

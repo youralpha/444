@@ -1,3 +1,8 @@
 __pycache__/
 app_output.log
 *.db
+build.bat
+build.sh
+dist/
+build/
+*.spec
