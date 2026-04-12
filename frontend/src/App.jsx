@@ -9,10 +9,10 @@ function App() {
 
   return (
     <div className="w-full min-h-screen">
-      {currentApp === 'menu' && <MainMenu setApp={setCurrentApp} />}
-      {currentApp === 'base' && <BaseTimer goBack={() => setCurrentApp('menu')} />}
-      {currentApp === 'kpt' && <KptProtocol goBack={() => setCurrentApp('menu')} />}
-      {currentApp === 'perimetr' && <Perimeter goBack={() => setCurrentApp('menu')} />}
+      {currentApp === 'menu' && <MainMenu setCurrentApp={setCurrentApp} />}
+      {currentApp === 'base' && <BaseTimer setCurrentApp={setCurrentApp} />}
+      {currentApp === 'kpt' && <KptProtocol setCurrentApp={setCurrentApp} />}
+      {currentApp === 'perimetr' && <Perimeter setCurrentApp={setCurrentApp} />}
     </div>
   )
 }
