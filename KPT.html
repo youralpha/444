@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>КПТ Протокол - Геймифицированный Трекер</title>
-    
+
     <!-- Подключаем Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Подключаем иконки Lucide -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    
+
     <!-- Подключаем Chart.js для графика -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -47,7 +47,7 @@
                     <span class="font-semibold text-brand-900" id="ui-level">Уровень 1</span>
                 </div>
             </div>
-            
+
             <!-- Полоса опыта -->
             <div class="w-full bg-slate-200 rounded-full h-2.5 mb-1">
                 <div id="ui-progress-bar" class="bg-brand-600 h-2.5 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
@@ -111,7 +111,7 @@
                 <p class="text-sm text-slate-600 mb-5 relative z-10 max-w-lg">
                     Чтение: <strong>«Когнитивная терапия», Джудит Бек</strong>. Читайте в своем темпе. За каждую новую прочитанную страницу начисляется <span class="font-semibold text-emerald-600">+2 XP</span>.
                 </p>
-                
+
                 <div class="flex flex-col sm:flex-row items-center gap-6 relative z-10">
                     <div class="w-full sm:w-1/3">
                         <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Текущая страница</label>
@@ -122,7 +122,7 @@
                             <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">/ 400</span>
                         </div>
                     </div>
-                    
+
                     <div class="w-full sm:w-2/3 mt-2 sm:mt-0">
                         <div class="flex justify-between text-xs text-slate-500 font-medium mb-2">
                             <span>Прогресс книги</span>
@@ -143,11 +143,11 @@
                 <h2 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
                     <i data-lucide="check-square" class="w-5 h-5 text-brand-500"></i> Динамика выполнения заданий
                 </h2>
-                
+
                 <div id="empty-chart-msg" class="h-40 flex items-center justify-center text-slate-400 text-sm bg-slate-50 rounded-lg border border-dashed border-slate-200 hidden">
                     Выполните первые задания, чтобы увидеть график прогресса.
                 </div>
-                
+
                 <div id="chart-container" class="h-64 w-full relative">
                     <canvas id="progressChart"></canvas>
                 </div>
@@ -158,11 +158,11 @@
                 <h2 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
                     <i data-lucide="book-open" class="w-5 h-5 text-emerald-500"></i> Прогресс чтения книги
                 </h2>
-                
+
                 <div id="empty-book-chart-msg" class="h-40 flex items-center justify-center text-slate-400 text-sm bg-slate-50 rounded-lg border border-dashed border-slate-200 hidden">
                     Начните читать книгу и введите первую страницу, чтобы увидеть график.
                 </div>
-                
+
                 <div id="book-chart-container" class="h-64 w-full relative">
                     <canvas id="bookChart"></canvas>
                 </div>
@@ -260,11 +260,11 @@
             currentWeek: 1,
             xp: 0,
             level: 1,
-            dailyProgress: {}, 
-            expandedTasks: [], 
-            taskData: {},       
+            dailyProgress: {},
+            expandedTasks: [],
+            taskData: {},
             readingHistory: {},
-            maxPageReached: 0   
+            maxPageReached: 0
         };
 
         let taskChartInstance = null;
@@ -281,12 +281,12 @@
                 if (!state.readingHistory) state.readingHistory = {};
                 if (typeof state.maxPageReached === 'undefined') state.maxPageReached = 0;
             }
-            
+
             if (!state.dailyProgress[todayDate]) state.dailyProgress[todayDate] = [];
             if (!state.taskData[todayDate]) state.taskData[todayDate] = {};
 
             document.getElementById('week-selector').value = state.currentWeek;
-            
+
             const todayPage = state.readingHistory[todayDate] || state.maxPageReached;
             document.getElementById('book-page-input').value = todayPage === 0 ? '' : todayPage;
 
@@ -332,11 +332,11 @@
 
             if (page > state.maxPageReached) {
                 const delta = page - state.maxPageReached;
-                state.xp += delta * 2; 
+                state.xp += delta * 2;
                 state.maxPageReached = page;
-                
+
                 state.level = Math.floor(state.xp / 100) + 1;
-                updateHeaderUI(); 
+                updateHeaderUI();
             }
 
             saveToMemory();
@@ -367,7 +367,7 @@
         function toggleTask(taskId, taskXp) {
             let todayTasks = [...(state.dailyProgress[todayDate] || [])];
             let newXp = state.xp;
-            
+
             if (todayTasks.includes(taskId)) {
                 todayTasks = todayTasks.filter(id => id !== taskId);
                 newXp -= taskXp;
@@ -422,11 +422,11 @@
             }
 
             if (state.activeTab === 'tracker') {
-                
+
                 // --- Рендер метаданных недели (ОПИСАНИЕ И ЦЕЛЬ) ---
                 const metaContainer = document.getElementById('week-metadata-container');
                 const meta = WEEK_METADATA[state.currentWeek];
-                
+
                 metaContainer.innerHTML = `
                     <div class="bg-brand-50/50 border border-brand-100 rounded-xl p-5 shadow-sm mb-6">
                         <h3 class="font-bold text-brand-800 text-lg mb-2 flex items-center gap-2">
@@ -445,16 +445,16 @@
                 const tasks = PROTOCOL_WEEKS[state.currentWeek];
                 const completedToday = state.dailyProgress[todayDate] || [];
                 const dayData = state.taskData[todayDate] || {};
-                
+
                 document.getElementById('ui-today-count').innerText = `Сегодня: ${completedToday.length}/${tasks.length}`;
-                
+
                 const taskListEl = document.getElementById('task-list');
                 taskListEl.innerHTML = '';
 
                 tasks.forEach(task => {
                     const isDone = completedToday.includes(task.id);
                     const isExpanded = state.expandedTasks.includes(task.id);
-                    
+
                     const li = document.createElement('li');
                     li.className = `p-4 transition-colors ${isDone ? 'bg-brand-50/40' : 'hover:bg-slate-50'}`;
 
@@ -469,7 +469,7 @@
                     const textWrap = document.createElement('div');
                     textWrap.className = "flex-1 cursor-pointer select-none group";
                     textWrap.onclick = () => toggleExpand(task.id);
-                    
+
                     textWrap.innerHTML = `
                         <div class="flex justify-between items-start">
                             <div class="pr-4">
@@ -487,7 +487,7 @@
                     if (isExpanded) {
                         const detailsDiv = document.createElement('div');
                         detailsDiv.className = "ml-10 mt-3 pt-3 border-t border-slate-100 text-sm text-slate-600 cursor-default";
-                        
+
                         let stepsHtml = task.steps.map(step => `<li class="mb-1.5 pl-1">${step}</li>`).join('');
                         let htmlContent = `
                             <p class="mb-3 text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 leading-relaxed"><span class="font-semibold text-brand-600 mr-1">ℹ️ Суть:</span> ${task.description}</p>
@@ -499,7 +499,7 @@
                             task.inputs.forEach(inp => {
                                 const val = dayData[`${task.id}_${inp.id}`] || '';
                                 htmlContent += `<div class="space-y-1.5">`;
-                                
+
                                 if (inp.type === 'slider') {
                                     const currentVal = val || inp.min;
                                     const displayId = `val_${task.id}_${inp.id}`;
@@ -508,7 +508,7 @@
                                         <input type="range" min="${inp.min}" max="${inp.max}" step="${inp.step}" value="${currentVal}" oninput="silentUpdateInput('${task.id}', '${inp.id}', this.value, '${displayId}', '${inp.suffix}')" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-600">
                                         <div class="flex justify-between text-xs text-slate-400"><span>${inp.min}</span><span>${inp.max}</span></div>
                                     `;
-                                } 
+                                }
                                 else if (inp.type === 'textarea') {
                                     htmlContent += `<label class="block text-sm font-medium text-slate-700">${inp.label}</label><textarea rows="2" placeholder="${inp.placeholder || 'Напишите здесь...'}" oninput="silentUpdateInput('${task.id}', '${inp.id}', this.value)" class="w-full p-2.5 bg-slate-50 border border-slate-200 text-slate-800 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all resize-y text-sm">${val}</textarea>`;
                                 }
@@ -557,7 +557,7 @@
                 document.getElementById('empty-chart-msg').classList.add('hidden');
                 document.getElementById('chart-container').classList.remove('hidden');
 
-                const labels = taskDates.map(date => date.slice(5)); 
+                const labels = taskDates.map(date => date.slice(5));
                 const dataPoints = taskDates.map(date => state.dailyProgress[date].length);
                 const ctxTask = document.getElementById('progressChart').getContext('2d');
                 if (taskChartInstance) taskChartInstance.destroy();
@@ -583,7 +583,7 @@
 
                 const firstDate = bookDatesOrig[0];
                 const continuousDates = generateDateRange(firstDate, todayDate);
-                
+
                 const labelsBook = [];
                 const dataPointsBook = [];
                 let lastKnownPage = 0;
@@ -606,15 +606,15 @@
                         datasets: [{
                             label: 'Прочитано страниц',
                             data: dataPointsBook,
-                            borderColor: '#10b981', 
+                            borderColor: '#10b981',
                             backgroundColor: 'rgba(16, 185, 129, 0.15)',
                             borderWidth: 3,
                             pointBackgroundColor: '#10b981',
-                            pointRadius: 0, 
+                            pointRadius: 0,
                             pointHoverRadius: 6,
-                            tension: 0.2, 
+                            tension: 0.2,
                             fill: true,
-                            stepped: 'before' 
+                            stepped: 'before'
                         }]
                     },
                     options: {
