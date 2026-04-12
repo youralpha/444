@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Target, Users, Calendar as CalendarIcon, CheckSquare, Crosshair } from 'lucide-react';
+import { Target, Users, Calendar as CalendarIcon, CheckSquare, Crosshair, ArrowLeft } from 'lucide-react';
 import { initialPerimeterState } from './perimeterData';
 import { TaskTab, TaskModal, CustomTaskModal } from './PerimeterModals';
 import { NetworkTab, AssetModal } from './PerimeterNetwork';
@@ -19,7 +19,7 @@ export default function Perimeter({ setCurrentApp }) {
 
     const loadData = async () => {
         try {
-            const res = await fetch('http://127.0.0.1:5000/api/data/perimetr');
+            const res = await fetch('http://127.0.0.1:5000/api/data');
             const data = await res.json();
             if (data.perimeter) {
                 // Ensure array fields exist
@@ -40,7 +40,7 @@ export default function Perimeter({ setCurrentApp }) {
         const newState = { ...state, ...updates };
         setState(newState);
         try {
-            await fetch('http://127.0.0.1:5000/api/data/perimetr', {
+            await fetch('http://127.0.0.1:5000/api/data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ perimeter: newState })
@@ -64,13 +64,16 @@ export default function Perimeter({ setCurrentApp }) {
             )}
 
             <div className="max-w-6xl mx-auto space-y-6">
+                <div className="w-full mb-4">
+                    <button onClick={() => setCurrentApp('menu')} className="text-gray-400 hover:text-white transition-colors text-sm font-medium flex items-center gap-1 font-mono">
+                    <ArrowLeft className="w-4 h-4"/> На главную
+                    </button>
+                </div>
+
                 {/* Header */}
                 <div className="border-b-2 border-tactical-700 pb-4 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => setCurrentApp('menu')} className="text-tactical-accent hover:text-emerald-400 font-bold border border-tactical-accent px-4 py-2 rounded uppercase text-sm tracking-wider hover:bg-tactical-accent/10 transition-colors">
-                            ← На главную
-                        </button>
-                        <h1 className="text-2xl md:text-3xl font-black text-white uppercase tracking-widest text-shadow-glow">ПЕРИМЕТР v4.0</h1>
+                        <h1 className="text-2xl md:text-3xl font-black text-white uppercase tracking-widest text-shadow-glow">PERIMETR-25</h1>
                     </div>
                     <div className="flex items-center gap-6">
                         <div className="flex items-center gap-2">

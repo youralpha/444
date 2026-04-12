@@ -106,6 +106,28 @@ const MODES = {
     act: () => [
         { id: 'act-1', name: 'РАМКА 1', duration: 20000, startFill: 0, endFill: 1, color: '#f43f5e', title: 'Шаг 1: Дистанцирование', desc: 'Заметьте пугающую, но правдивую мысль. Скажите себе: «У меня есть мысль, что [вставьте вашу мысль]».' },
         { id: 'act-2', name: 'РАМКА 2', duration: 20000, startFill: 0, endFill: 1, color: '#eab308', title: 'Шаг 2: Наблюдение', desc: 'Теперь скажите: «Я ЗАМЕЧАЮ, что у меня есть мысль, что...». Почувствуйте дистанцию. Вы — не ваша мысль.' },
+    ],
+    rehearsal: () => [
+        { id: 'reh-1', name: 'СТАБИЛИЗАЦИЯ', duration: 120000, startFill: 0, endFill: 1, color: '#38bdf8', title: 'Шаг 1: Стабилизация', desc: 'Сделайте 3 физиологических вздоха + дышите ровно. Закройте глаза. Представьте предстоящее событие.' },
+        { id: 'reh-2', name: 'ОПТИМУМ', duration: 120000, startFill: 0, endFill: 1, color: '#10b981', title: 'Сценарий А: Оптимальный', desc: 'Представьте место, себя. Вы спокойны. Ключевые слова, позитивная реакция оппонента, успех. Проживите это.' },
+        { id: 'reh-3', name: 'СЛОЖНОСТЬ', duration: 120000, startFill: 0, endFill: 1, color: '#f43f5e', title: 'Сценарий Б: Сложный', desc: 'Возникает провокация или препятствие. Пульс растёт — ЗАМЕТЬТЕ ЭТО. Вздох. Пауза. Вы перестраиваетесь и контролируете ситуацию.' },
+        { id: 'reh-4', name: 'ПРОВАЛ', duration: 120000, startFill: 0, endFill: 1, color: '#eab308', title: 'Сценарий В: Провальный', desc: 'Худший реалистичный исход. Ваши действия по минимизации ущерба. Вы выходите с достоинством. Извлекаете опыт.' },
+        { id: 'reh-5', name: 'ЗАВЕРШЕНИЕ', duration: 60000, startFill: 0, endFill: 1, color: '#38bdf8', title: 'Шаг 4: Завершение', desc: 'Сделайте 3 глубоких вдоха. Мысленно скажите: «Я готов к любому варианту». Медленно откройте глаза.' }
+    ],
+    yoganidra: () => [
+        { id: 'yn-1', name: 'ПОДГОТОВКА', duration: 60000, startFill: 0, endFill: 1, color: '#38bdf8', title: 'Подготовка к NSDR', desc: 'Лягте на спину, руки вдоль тела. Включите выбранную аудиозапись (NSDR Huberman или Insight Timer).' },
+        { id: 'yn-2', name: 'ПРАКТИКА', duration: 15 * 60000, startFill: 0, endFill: 1, color: '#a78bfa', title: 'Глубокое расслабление', desc: 'Следуйте за голосом диктора. Позвольте телу уснуть, сохраняя легкое фоновое сознание.' },
+        { id: 'yn-3', name: 'ВОЗВРАТ', duration: 60000, startFill: 0, endFill: 1, color: '#10b981', title: 'Возвращение', desc: 'Практика завершена. Не вскакивайте. Просто полежите спокойно. Затем потянитесь и медленно сядьте.' }
+    ],
+    cold: () => [
+        { id: 'cold-1', name: 'НАСТРОЙКА', duration: 10000, startFill: 0, endFill: 1, color: '#38bdf8', title: 'Подготовка', desc: 'После теплого душа переключите кран на самую холодную воду.' },
+        { id: 'cold-2', name: 'ЭКСПОЗИЦИЯ', duration: 60000, startFill: 0, endFill: 1, color: '#0284c7', title: 'Холодовой стресс', desc: 'Выдержите ледяную воду. Практикуйте физиологический вздох. Контролируйте свою реакцию на стресс.' }
+    ],
+    key: () => [
+        { id: 'key-1', name: 'РАСХОЖДЕНИЕ', duration: 60000, startFill: 0, endFill: 1, color: '#38bdf8', title: 'Приём А: Расхождение', desc: 'Встаньте. Закройте глаза. Руки перед собой. Вообразите, что они расходятся в стороны. Без мышечного усилия.' },
+        { id: 'key-2', name: 'СХОЖДЕНИЕ', duration: 60000, startFill: 0, endFill: 1, color: '#a78bfa', title: 'Приём Б: Схождение', desc: 'Разведите руки. Представьте, что они притягиваются друг к другу, как магниты.' },
+        { id: 'key-3', name: 'ВСПЛЫВАНИЕ', duration: 60000, startFill: 0, endFill: 1, color: '#10b981', title: 'Приём В: Всплывание', desc: 'Опустите руки. Представьте, что одна рука стала лёгкой как воздушный шар и сама всплывает вверх.' },
+        { id: 'key-4', name: 'МАЯТНИК', duration: 60000, startFill: 0, endFill: 1, color: '#f43f5e', title: 'Приём Г: Покачивание', desc: 'Представьте лёгкое покачивание всего тела вперёд-назад. Позвольте телу двигаться за воображением.' }
     ]
 };
 
@@ -126,6 +148,10 @@ export default function BaseTimer({ setCurrentApp }) {
       else if (modeKey === 'base_40') newPhases = MODES.base(40);
       else if (modeKey === 'stopframe') newPhases = MODES.stopframe();
       else if (modeKey === 'act') newPhases = MODES.act();
+      else if (modeKey === 'rehearsal') newPhases = MODES.rehearsal();
+      else if (modeKey === 'yoganidra') newPhases = MODES.yoganidra();
+      else if (modeKey === 'cold') newPhases = MODES.cold();
+      else if (modeKey === 'key') newPhases = MODES.key();
 
       setPhases(newPhases);
       setPhaseIndex(0);
@@ -196,31 +222,35 @@ export default function BaseTimer({ setCurrentApp }) {
   return (
     <div className="flex flex-col items-center min-h-screen p-4 bg-tactical-900 justify-center">
       <div className="w-full mb-4 max-w-[28rem] flex justify-between">
-        <button onClick={() => setCurrentApp('menu')} className="text-gray-400 hover:text-white transition-colors text-sm font-medium flex items-center gap-1">
+        <button onClick={() => setCurrentApp('menu')} className="text-gray-400 hover:text-white transition-colors text-sm font-medium flex items-center gap-1 font-mono">
           <ArrowLeft className="w-4 h-4"/> На главную
         </button>
       </div>
 
-      <div className="flex flex-col items-center bg-tactical-800 p-8 rounded-sm shadow-2xl max-w-[28rem] w-full cyber-border">
+      <div className="flex flex-col items-center bg-tactical-800 p-8 rounded-sm shadow-2xl max-w-[28rem] w-full cyber-border font-mono">
 
-        <div className="flex gap-2 w-full overflow-x-auto custom-scrollbar pb-4 mb-4">
+        <div className="flex flex-wrap gap-2 w-full justify-center pb-4 mb-4 border-b border-tactical-700">
             <button onClick={() => startMode('base_20')} className={`px-3 py-1 text-xs rounded border transition-colors whitespace-nowrap ${activeMode === 'base_20' ? 'bg-tactical-accent text-tactical-900 border-tactical-accent font-bold' : 'bg-tactical-900 text-gray-400 border-tactical-700 hover:text-white'}`}>База (20м)</button>
             <button onClick={() => startMode('base_40')} className={`px-3 py-1 text-xs rounded border transition-colors whitespace-nowrap ${activeMode === 'base_40' ? 'bg-tactical-accent text-tactical-900 border-tactical-accent font-bold' : 'bg-tactical-900 text-gray-400 border-tactical-700 hover:text-white'}`}>База (40м)</button>
             <button onClick={() => startMode('stopframe')} className={`px-3 py-1 text-xs rounded border transition-colors whitespace-nowrap ${activeMode === 'stopframe' ? 'bg-blue-500 text-white border-blue-500 font-bold' : 'bg-tactical-900 text-gray-400 border-tactical-700 hover:text-white'}`}>СТОП-КАДР</button>
             <button onClick={() => startMode('act')} className={`px-3 py-1 text-xs rounded border transition-colors whitespace-nowrap ${activeMode === 'act' ? 'bg-orange-500 text-white border-orange-500 font-bold' : 'bg-tactical-900 text-gray-400 border-tactical-700 hover:text-white'}`}>ACT-Разделение</button>
+            <button onClick={() => startMode('rehearsal')} className={`px-3 py-1 text-xs rounded border transition-colors whitespace-nowrap ${activeMode === 'rehearsal' ? 'bg-purple-500 text-white border-purple-500 font-bold' : 'bg-tactical-900 text-gray-400 border-tactical-700 hover:text-white'}`}>Репетиция</button>
+            <button onClick={() => startMode('yoganidra')} className={`px-3 py-1 text-xs rounded border transition-colors whitespace-nowrap ${activeMode === 'yoganidra' ? 'bg-indigo-500 text-white border-indigo-500 font-bold' : 'bg-tactical-900 text-gray-400 border-tactical-700 hover:text-white'}`}>Yoga Nidra</button>
+            <button onClick={() => startMode('cold')} className={`px-3 py-1 text-xs rounded border transition-colors whitespace-nowrap ${activeMode === 'cold' ? 'bg-sky-500 text-white border-sky-500 font-bold' : 'bg-tactical-900 text-gray-400 border-tactical-700 hover:text-white'}`}>Холод</button>
+            <button onClick={() => startMode('key')} className={`px-3 py-1 text-xs rounded border transition-colors whitespace-nowrap ${activeMode === 'key' ? 'bg-rose-500 text-white border-rose-500 font-bold' : 'bg-tactical-900 text-gray-400 border-tactical-700 hover:text-white'}`}>Ключ</button>
         </div>
 
         <p className="text-sm font-bold text-gray-300 text-center mb-1 uppercase tracking-wider">{currentPhase.title}</p>
         <p className="text-xs text-gray-400 mb-8 text-center min-h-[40px] leading-relaxed max-w-xs">{currentPhase.desc}</p>
 
-        <div className="relative w-64 h-64 flex flex-col items-center justify-center mb-8">
+        <div className="relative w-64 h-64 flex flex-col items-center justify-center mb-8 font-sans">
             <svg className="absolute top-0 left-0 w-full h-full -rotate-90" viewBox="0 0 200 200">
                 <circle cx="100" cy="100" r={radius} fill="transparent" stroke="#334155" strokeWidth="12" />
                 <circle cx="100" cy="100" r={radius} fill="transparent" stroke={currentPhase.color} strokeWidth="12" strokeLinecap="round"
                         strokeDasharray={circumference} strokeDashoffset={offset} className="transition-all duration-75" />
             </svg>
-            <div className="text-xl font-bold uppercase tracking-widest text-center px-4" style={{ color: currentPhase.color }}>{currentPhase.name}</div>
-            <div className="text-5xl font-bold text-white tabular-nums mt-2">
+            <div className="text-xl font-bold uppercase tracking-widest text-center px-4 font-mono" style={{ color: currentPhase.color }}>{currentPhase.name}</div>
+            <div className="text-5xl font-bold text-white tabular-nums mt-2 font-mono">
                 {renderTime(timeRemaining)}
             </div>
         </div>
