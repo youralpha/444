@@ -350,3 +350,11 @@ button.btn-secondary:hover { background-color: #475569; }
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* Additional specific tailwind port classes */
+.bg-\[rgba\(0\,0\,0\,0\.2\)\] { background-color: rgba(0,0,0,0.2); }
+.pt-2 { padding-top: 0.5rem; }
+.border-t { border-top: 1px solid var(--bg-accent); }
+.line-through { text-decoration: line-through; }
+.h-64 { height: 16rem; }
+.bg-main { background-color: var(--bg-main); }

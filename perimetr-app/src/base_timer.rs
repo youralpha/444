@@ -104,31 +104,39 @@ pub fn BaseView() -> Element {
     let mut total_time_left = use_signal(|| total_ms_initial); // ms
     let mut time_left_in_phase = use_signal(|| get_base_program(20)[0].duration_ms); // ms
 
-    use_future(move || async move {
-        loop {
-            task::sleep(Duration::from_millis(100)).await;
+    // Use a background task that doesn't track signals in its dependencies to avoid reactive loops
+    // Dioxus 0.5+ use_coroutine or use_hook with a spawn
+    use_hook(|| {
+        dioxus::prelude::spawn(async move {
+            loop {
+                task::sleep(Duration::from_millis(100)).await;
 
-            if is_running() {
-                let current_ms = time_left_in_phase();
-                let total_ms = total_time_left();
+                // Read without subscribing since we are in an async loop manually spawned
+                if *is_running.read() {
+                    let current_ms = *time_left_in_phase.read();
+                    let total_ms = *total_time_left.read();
 
-                if current_ms > 100 {
-                    time_left_in_phase.set(current_ms - 100);
-                    total_time_left.set(total_ms - 100);
-                } else {
-                    // Phase ended, move to next
-                    let mut idx = current_phase_idx();
-                    if idx + 1 < phases().len() {
-                        idx += 1;
-                        current_phase_idx.set(idx);
-                        time_left_in_phase.set(phases()[idx].duration_ms);
+                    if current_ms > 100 {
+                        time_left_in_phase.set(current_ms - 100);
+                        total_time_left.set(total_ms - 100);
                     } else {
-                        // Finished
-                        is_running.set(false);
+                        // Phase ended, move to next
+                        let mut idx = *current_phase_idx.read();
+                        let p_len = phases.read().len();
+
+                        if idx + 1 < p_len {
+                            idx += 1;
+                            current_phase_idx.set(idx);
+                            let new_duration = phases.read()[idx].duration_ms;
+                            time_left_in_phase.set(new_duration);
+                        } else {
+                            // Finished
+                            is_running.set(false);
+                        }
                     }
                 }
             }
-        }
+        })
     });
 
     let format_time = |ms: i32| -> String {

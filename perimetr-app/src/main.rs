@@ -84,7 +84,7 @@ fn PerimetrView() -> Element {
     });
 
     let mut current_tab = use_signal(|| "tasks");
-    let mut render_trigger = use_signal(|| 0); // Hack to force task re-renders
+    let render_trigger = use_signal(|| 0);
 
     let is_task_done = {
         let db_cloned = db.clone();
@@ -164,7 +164,7 @@ fn PerimetrView() -> Element {
                             class: "btn-primary",
                             onclick: { let db = db.clone(); move |_| {
                                 let id = format!("n{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-                                let _ = db.execute("INSERT INTO perimetr_network (id, name, callsign, role, circle) VALUES (?1, 'Новый', '', '', '3')", rusqlite::params![id]);
+                                let _ = db.execute("INSERT INTO perimetr_network (id, name, callsign, role, circle) VALUES (?1, '', '', '', '3')", rusqlite::params![id]);
                                 let updated = db.query_map("SELECT id, name, callsign, role, circle FROM perimetr_network", [], |row| {
                                     Ok(NetworkContact { id: row.get(0)?, name: row.get(1)?, callsign: row.get(2)?, role: row.get(3)?, circle: row.get(4)? })
                                 }).unwrap_or_default();
@@ -176,7 +176,7 @@ fn PerimetrView() -> Element {
 
                     div { class: "grid-3",
                         for contact in current_contacts {
-                            ContactItem { contact: contact.clone(), contacts, db: db.clone() }
+                            ContactItem { contact: contact.clone(), contacts: contacts, db: db.clone() }
                         }
                     }
                 }
@@ -232,24 +232,77 @@ fn TaskItem(id: &'static str, title: &'static str, time: &'static str, is_done: 
 
 #[component]
 fn ContactItem(contact: NetworkContact, mut contacts: Signal<Vec<NetworkContact>>, db: Arc<Db>) -> Element {
+    let mut edit_mode = use_signal(|| false);
+
+    let mut name = use_signal(|| contact.name.clone());
+    let mut callsign = use_signal(|| contact.callsign.clone());
+    let mut role = use_signal(|| contact.role.clone());
+
     let c_id = contact.id.clone();
+
+
+    let c_id4 = contact.id.clone();
+
     rsx! {
         div { class: "p-4 bg-surface border border-accent rounded",
-            div { class: "flex justify-between items-start mb-2",
-                span { class: "font-bold text-sm", "{contact.name}" }
-                span { class: "text-[10px] text-orange", "«{contact.callsign}»" }
+            if edit_mode() {
+                div { class: "flex flex-col gap-2 mb-4",
+                    input {
+                        placeholder: "Имя", value: "{name}",
+                        onchange: move |e| name.set(e.value())
+                    }
+                    input {
+                        placeholder: "Позывной", value: "{callsign}", class: "border-orange",
+                        onchange: move |e| callsign.set(e.value())
+                    }
+                    input {
+                        placeholder: "Роль", value: "{role}", class: "border-blue",
+                        onchange: move |e| role.set(e.value())
+                    }
+                    div { class: "flex gap-2 mt-2",
+                        button {
+                            class: "btn-primary text-xs py-1 px-2",
+                            onclick: { let db = db.clone(); move |_| {
+                                let _ = db.execute("UPDATE perimetr_network SET name=?1, callsign=?2, role=?3 WHERE id=?4",
+                                    rusqlite::params![name(), callsign(), role(), c_id]);
+
+                                let updated = db.query_map("SELECT id, name, callsign, role, circle FROM perimetr_network", [], |row| {
+                                    Ok(NetworkContact { id: row.get(0)?, name: row.get(1)?, callsign: row.get(2)?, role: row.get(3)?, circle: row.get(4)? })
+                                }).unwrap_or_default();
+                                contacts.set(updated);
+                                edit_mode.set(false);
+                            }},
+                            "Сохранить"
+                        }
+                    }
+                }
+            } else {
+                div { class: "flex justify-between items-start mb-2",
+                    span { class: "font-bold text-sm", if contact.name.is_empty() { "Без Имени" } else { "{contact.name}" } }
+                    span { class: "text-[10px] text-orange", "«{contact.callsign}»" }
+                }
+                p { class: "text-[10px] text-blue uppercase mb-4", "{contact.role}" }
             }
-            p { class: "text-[10px] text-blue uppercase mb-4", "{contact.role}" }
-            button {
-                class: "text-[10px] text-red hover:underline cursor-pointer",
-                onclick: move |_| {
-                    let _ = db.execute("DELETE FROM perimetr_network WHERE id = ?1", rusqlite::params![c_id]);
-                    let updated = db.query_map("SELECT id, name, callsign, role, circle FROM perimetr_network", [], |row| {
-                        Ok(NetworkContact { id: row.get(0)?, name: row.get(1)?, callsign: row.get(2)?, role: row.get(3)?, circle: row.get(4)? })
-                    }).unwrap_or_default();
-                    contacts.set(updated);
-                },
-                "Удалить"
+
+            div { class: "flex justify-between items-center border-t border-accent pt-2 mt-2",
+                button {
+                    class: "text-[10px] text-emerald hover:underline cursor-pointer",
+                    onclick: move |_| {
+                        edit_mode.set(!edit_mode());
+                    },
+                    if edit_mode() { "Отмена" } else { "Изменить" }
+                }
+                button {
+                    class: "text-[10px] text-red hover:underline cursor-pointer",
+                    onclick: { let db = db.clone(); move |_| {
+                        let _ = db.execute("DELETE FROM perimetr_network WHERE id = ?1", rusqlite::params![c_id4]);
+                        let updated = db.query_map("SELECT id, name, callsign, role, circle FROM perimetr_network", [], |row| {
+                            Ok(NetworkContact { id: row.get(0)?, name: row.get(1)?, callsign: row.get(2)?, role: row.get(3)?, circle: row.get(4)? })
+                        }).unwrap_or_default();
+                        contacts.set(updated);
+                    }},
+                    "Удалить"
+                }
             }
         }
     }
