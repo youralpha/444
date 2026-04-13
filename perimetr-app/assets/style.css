@@ -358,3 +358,34 @@ button.btn-secondary:hover { background-color: #475569; }
 .line-through { text-decoration: line-through; }
 .h-64 { height: 16rem; }
 .bg-main { background-color: var(--bg-main); }
+
+/* Quick fallback rules in case custom properties didn't load properly */
+body {
+    background-color: #0f172a;
+    color: #f8fafc;
+}
+.sidebar {
+    background-color: #1e293b;
+    border-right: 1px solid #334155;
+}
+.cyber-border {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+.text-dim { color: #94a3b8; }
+.text-emerald { color: #10b981; }
+.text-orange { color: #fb923c; }
+.text-blue { color: #3b82f6; }
+.text-red { color: #ef4444; }
+.bg-surface { background-color: #1e293b; }
+.bg-emerald { background-color: #10b981; }
+.bg-blue { background-color: #3b82f6; }
+.border-emerald { border-color: #10b981; }
+.border-blue { border-color: #3b82f6; }
+.border-orange { border-color: #fb923c; }
+.border-accent { border-color: #334155; }
+.hover-bg-accent:hover { background-color: #334155; }
+button.btn-primary { background-color: #10b981; color: #0f172a; }
+button.btn-secondary { background-color: #334155; color: #f8fafc; }
+.tab-btn.active { color: #10b981; border-bottom-color: #10b981; }
+.tab-btn-pill.active { background-color: #10b981; color: #0f172a; }

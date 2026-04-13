@@ -32,7 +32,7 @@ fn RootApp() -> Element {
     let current_route = use_signal(|| AppRoute::Perimetr);
 
     rsx! {
-        document::Link { rel: "stylesheet", href: asset!("/assets/style.css") }
+        style { {include_str!("../assets/style.css")} }
         div { class: "app-container",
             Sidebar { current_route }
             div { class: "main-content",
