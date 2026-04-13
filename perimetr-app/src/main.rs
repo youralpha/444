@@ -285,8 +285,12 @@ fn PerimetrView() -> Element {
 #[component]
 fn TaskModal(task: ProtocolTask, on_close: EventHandler<MouseEvent>, db: Arc<Db>) -> Element {
     let date_key = chrono::Local::now().format("%Y-%m-%d").to_string();
-    let raw_data: String = db.query_row("SELECT field_data FROM perimetr_task_history WHERE date=?1 AND task_id=?2", rusqlite::params![date_key.clone(), task.id.clone()], |r| r.get(0)).unwrap_or("{}".into());
-    let saved_answers: std::collections::HashMap<String, String> = serde_json::from_str(&raw_data).unwrap_or_default();
+
+    let mut saved_answers = use_signal(|| {
+        let raw_data: String = db.query_row("SELECT field_data FROM perimetr_task_history WHERE date=?1 AND task_id=?2", rusqlite::params![date_key.clone(), task.id.clone()], |r| r.get(0)).unwrap_or("{}".into());
+        let parsed: std::collections::HashMap<String, String> = serde_json::from_str(&raw_data).unwrap_or_default();
+        parsed
+    });
 
     let mut is_completed = use_signal(|| {
         db.query_row("SELECT completed FROM perimetr_task_history WHERE date=?1 AND task_id=?2", rusqlite::params![date_key.clone(), task.id.clone()], |r| r.get(0)).unwrap_or(false)
@@ -312,16 +316,18 @@ fn TaskModal(task: ProtocolTask, on_close: EventHandler<MouseEvent>, db: Arc<Db>
                                 if field.type_ == "textarea" {
                                     textarea {
                                         rows: 3, placeholder: "{field.placeholder.clone().unwrap_or_default()}", class: "text-sm bg-tactical-900",
-                                        value: "{saved_answers.get(&field.id).cloned().unwrap_or_default()}",
+                                        value: "{saved_answers().get(&field.id).cloned().unwrap_or_default()}",
                                         onchange: {
                                             let db_i = db.clone();
                                             let d_key_i = date_key.clone();
                                             let t_id_i = task.id.clone();
                                             let f_id_i = field.id.clone();
-                                            let mut answers = saved_answers.clone();
                                             move |evt| {
-                                                answers.insert(f_id_i.clone(), evt.value());
-                                                let json_str = serde_json::to_string(&answers).unwrap();
+                                                let mut map = saved_answers();
+                                                map.insert(f_id_i.clone(), evt.value());
+                                                saved_answers.set(map.clone());
+
+                                                let json_str = serde_json::to_string(&map).unwrap();
                                                 let _ = db_i.execute("INSERT OR REPLACE INTO perimetr_task_history (date, task_id, completed, field_data) VALUES (?1, ?2, ?3, ?4)", rusqlite::params![d_key_i.clone(), t_id_i.clone(), is_completed(), json_str]);
                                             }
                                         }
@@ -329,16 +335,18 @@ fn TaskModal(task: ProtocolTask, on_close: EventHandler<MouseEvent>, db: Arc<Db>
                                 } else {
                                     input {
                                         type: "{field.type_}", placeholder: "{field.placeholder.clone().unwrap_or_default()}", class: "text-sm bg-tactical-900",
-                                        value: "{saved_answers.get(&field.id).cloned().unwrap_or_default()}",
+                                        value: "{saved_answers().get(&field.id).cloned().unwrap_or_default()}",
                                         onchange: {
                                             let db_i = db.clone();
                                             let d_key_i = date_key.clone();
                                             let t_id_i = task.id.clone();
                                             let f_id_i = field.id.clone();
-                                            let mut answers = saved_answers.clone();
                                             move |evt| {
-                                                answers.insert(f_id_i.clone(), evt.value());
-                                                let json_str = serde_json::to_string(&answers).unwrap();
+                                                let mut map = saved_answers();
+                                                map.insert(f_id_i.clone(), evt.value());
+                                                saved_answers.set(map.clone());
+
+                                                let json_str = serde_json::to_string(&map).unwrap();
                                                 let _ = db_i.execute("INSERT OR REPLACE INTO perimetr_task_history (date, task_id, completed, field_data) VALUES (?1, ?2, ?3, ?4)", rusqlite::params![d_key_i.clone(), t_id_i.clone(), is_completed(), json_str]);
                                             }
                                         }
@@ -353,7 +361,10 @@ fn TaskModal(task: ProtocolTask, on_close: EventHandler<MouseEvent>, db: Arc<Db>
                         onclick: move |_| {
                             let newly_completed = !is_completed();
                             is_completed.set(newly_completed);
-                            let _ = db_c.execute("UPDATE perimetr_task_history SET completed=?1 WHERE date=?2 AND task_id=?3", rusqlite::params![newly_completed, d_key.clone(), t_id.clone()]);
+
+                            let map = saved_answers();
+                            let json_str = serde_json::to_string(&map).unwrap_or("{}".into());
+                            let _ = db_c.execute("INSERT OR REPLACE INTO perimetr_task_history (date, task_id, completed, field_data) VALUES (?1, ?2, ?3, ?4)", rusqlite::params![d_key.clone(), t_id.clone(), newly_completed, json_str]);
                         },
                         div { class: if is_completed() { "w-6 h-6 border-2 border-emerald rounded bg-emerald" } else { "w-6 h-6 border-2 border-emerald rounded" } }
                         span { class: "font-bold text-sm", if is_completed() { "Выполнено" } else { "Отметить выполненным" } }
@@ -367,6 +378,7 @@ fn TaskModal(task: ProtocolTask, on_close: EventHandler<MouseEvent>, db: Arc<Db>
 
 #[component]
 fn AssetModal(contact: NetworkContact, mut contacts: Signal<Vec<NetworkContact>>, on_close: EventHandler<MouseEvent>, db: Arc<Db>) -> Element {
+
     let mut name = use_signal(|| contact.name.clone());
     let mut callsign = use_signal(|| contact.callsign.clone());
     let mut role = use_signal(|| contact.role.clone());
@@ -382,27 +394,38 @@ fn AssetModal(contact: NetworkContact, mut contacts: Signal<Vec<NetworkContact>>
     let mut value = use_signal(|| contact.value.clone());
     let mut give = use_signal(|| contact.give.clone());
 
+    // Parse links string (comma separated IDs)
+    let initial_links: Vec<String> = if contact.links.is_empty() { Vec::new() } else { contact.links.split(',').map(|s| s.trim().to_string()).collect() };
+    let mut links = use_signal(|| initial_links);
+
+    let mut new_link_selection = use_signal(|| "".to_string());
+
     let c_id = contact.id.clone();
     let c_id_del = contact.id.clone();
+
+    // Helper to fetch other contacts not currently linked
+    let current_contacts = contacts();
+    let current_links = links();
+    let available_to_link: Vec<&NetworkContact> = current_contacts.iter().filter(|c| c.id != contact.id && !current_links.contains(&c.id)).collect();
 
     rsx! {
         div { class: "fixed inset-0 z-[60] flex items-center justify-center p-4",
             div { class: "absolute inset-0 bg-black/80 backdrop-blur-sm modal-overlay", onclick: move |evt| on_close.call(evt) }
             div { class: "relative bg-tactical-800 border border-accent rounded w-full max-w-2xl max-h-[90vh] flex flex-col modal-content shadow-2xl",
-                div { class: "p-6 border-b border-accent bg-tactical-800",
+                div { class: "p-6 border-b border-accent bg-tactical-800 flex justify-between items-start",
                     h3 { class: "text-xl font-bold text-white uppercase", "Досье Агента" }
                 }
 
                 div { class: "p-6 overflow-y-auto custom-scrollbar flex-1 space-y-5",
                     div { class: "grid-3",
-                        div { class: "flex-col", label { class: "text-xs font-bold text-dim uppercase mb-1", "Имя" } input { value: "{name}", class: "bg-tactical-900 text-sm", onchange: move |e| name.set(e.value()) } }
-                        div { class: "flex-col", label { class: "text-xs font-bold text-orange uppercase mb-1", "Позывной" } input { value: "{callsign}", class: "bg-tactical-900 text-sm border-orange", onchange: move |e| callsign.set(e.value()) } }
-                        div { class: "flex-col", label { class: "text-xs font-bold text-dim uppercase mb-1", "Роль" } input { value: "{role}", class: "bg-tactical-900 text-sm", onchange: move |e| role.set(e.value()) } }
+                        div { class: "flex-col", label { class: "text-xs font-bold text-dim uppercase mb-1", "Имя" } input { value: "{name}", class: "bg-tactical-900 text-sm", onchange: move |evt| name.set(evt.value()) } }
+                        div { class: "flex-col", label { class: "text-xs font-bold text-orange uppercase mb-1", "Позывной" } input { value: "{callsign}", class: "bg-tactical-900 text-sm border-orange", onchange: move |evt| callsign.set(evt.value()) } }
+                        div { class: "flex-col", label { class: "text-xs font-bold text-dim uppercase mb-1", "Роль" } input { value: "{role}", class: "bg-tactical-900 text-sm", onchange: move |evt| role.set(evt.value()) } }
                     }
                     div { class: "grid-2",
-                        div { class: "flex-col", label { class: "text-xs font-bold text-dim uppercase mb-1", "Связь" } input { value: "{contact_info}", class: "bg-tactical-900 text-sm", onchange: move |e| contact_info.set(e.value()) } }
+                        div { class: "flex-col", label { class: "text-xs font-bold text-dim uppercase mb-1", "Связь" } input { value: "{contact_info}", class: "bg-tactical-900 text-sm", onchange: move |evt| contact_info.set(evt.value()) } }
                         div { class: "flex-col", label { class: "text-xs font-bold text-dim uppercase mb-1", "Круг доступа" }
-                            select { value: "{circle}", class: "bg-tactical-900 text-sm", onchange: move |e| circle.set(e.value()),
+                            select { value: "{circle}", class: "bg-tactical-900 text-sm", onchange: move |evt| circle.set(evt.value()),
                                 option { value: "1", "Круг 1: Ближний (Доверие)" }
                                 option { value: "2", "Круг 2: Оперативный (Выгода)" }
                                 option { value: "3", "Круг 3: Источники (Слухи)" }
@@ -411,29 +434,90 @@ fn AssetModal(contact: NetworkContact, mut contacts: Signal<Vec<NetworkContact>>
                         }
                     }
                     div { class: "grid-2",
-                        div { class: "flex-col", label { class: "text-xs font-bold text-dim uppercase mb-1", "Последний контакт" } input { type: "date", value: "{last_date}", class: "bg-tactical-900 text-sm", onchange: move |e| last_date.set(e.value()) } }
-                        div { class: "flex-col", label { class: "text-xs font-bold text-blue uppercase mb-1", "Следующий шаг" } input { type: "date", value: "{next_date}", class: "bg-tactical-900 text-sm border-blue", onchange: move |e| next_date.set(e.value()) } }
+                        div { class: "flex-col", label { class: "text-xs font-bold text-dim uppercase mb-1", "Последний контакт" } input { type: "date", value: "{last_date}", class: "bg-tactical-900 text-sm", onchange: move |evt| last_date.set(evt.value()) } }
+                        div { class: "flex-col", label { class: "text-xs font-bold text-blue uppercase mb-1", "Следующий шаг" } input { type: "date", value: "{next_date}", class: "bg-tactical-900 text-sm border-blue", onchange: move |evt| next_date.set(evt.value()) } }
                     }
-                    div { class: "flex-col", label { class: "text-xs font-bold text-dim uppercase mb-1", "Примечание" } textarea { rows: 2, value: "{notes}", class: "bg-tactical-900 text-sm", onchange: move |e| notes.set(e.value()) } }
+
+                    div { class: "grid-2",
+                        div { class: "flex-col",
+                            label { class: "text-xs font-bold text-dim uppercase mb-1", "Связанные контакты" }
+                            div { class: "flex flex-wrap gap-1 min-h-[38px] p-2 bg-tactical-900 border border-accent rounded items-center overflow-y-auto max-h-20",
+                                for linked_id in current_links.iter() {
+                                    if let Some(linked_contact) = contacts().iter().find(|c| c.id == *linked_id) {
+                                        div { class: "bg-tactical-800 px-2 py-1 rounded text-[10px] flex items-center gap-1",
+                                            span { "{linked_contact.name}" }
+                                            b { class: "cursor-pointer text-red hover:underline",
+                                                onclick: {
+                                                    let lid = linked_id.clone();
+                                                    move |_| {
+                                                        let mut l = links();
+                                                        l.retain(|x| x != &lid);
+                                                        links.set(l);
+                                                    }
+                                                },
+                                                "×"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            div { class: "flex gap-2 mt-1",
+                                select {
+                                    class: "flex-1 bg-tactical-900 border border-accent rounded p-2 text-xs text-white",
+                                    value: "{new_link_selection}",
+                                    onchange: move |evt| new_link_selection.set(evt.value()),
+                                    option { value: "", "Связать с..." }
+                                    for avail in available_to_link.iter() {
+                                        option { value: "{avail.id}", "{avail.name} ({avail.role})" }
+                                    }
+                                }
+                                button {
+                                    class: "px-3 py-2 bg-tactical-800 text-emerald font-bold rounded text-xs hover-bg-accent cursor-pointer",
+                                    onclick: move |_| {
+                                        let selected = new_link_selection();
+                                        if !selected.is_empty() {
+                                            let mut l = links();
+                                            l.push(selected);
+                                            links.set(l);
+                                            new_link_selection.set("".to_string());
+                                        }
+                                    },
+                                    "Добавить"
+                                }
+                            }
+                        }
+                        div { class: "flex-col", label { class: "text-xs font-bold text-dim uppercase mb-1", "Примечание" } textarea { rows: 4, value: "{notes}", class: "bg-tactical-900 text-sm", onchange: move |evt| notes.set(evt.value()) } }
+                    }
 
                     div { class: "bg-tactical-900 border border-accent p-4 rounded-sm",
                         h4 { class: "text-xs font-bold text-emerald uppercase mb-3 border-b border-accent pb-2", "Матрица Мотивации (M.I.C.E.)" }
                         div { class: "grid-2",
-                            input { placeholder: "Money (Деньги)", value: "{m}", class: "text-sm", onchange: move |e| m.set(e.value()) }
-                            input { placeholder: "Ideology (Идеология)", value: "{i}", class: "text-sm", onchange: move |e| i.set(e.value()) }
-                            input { placeholder: "Coercion (Принуждение)", value: "{c}", class: "text-sm", onchange: move |e| c.set(e.value()) }
+                            input { placeholder: "Money (Деньги)", value: "{m}", class: "text-sm", onchange: move |evt| m.set(evt.value()) }
+                            input { placeholder: "Ideology (Идеология)", value: "{i}", class: "text-sm", onchange: move |evt| i.set(evt.value()) }
+                            input { placeholder: "Coercion (Принуждение)", value: "{c}", class: "text-sm", onchange: move |evt| c.set(evt.value()) }
                             input { placeholder: "Ego (Эго)", value: "{e}", class: "text-sm", onchange: move |evt| e.set(evt.value()) }
                         }
                     }
-                    div { class: "flex-col", label { class: "text-xs font-bold text-dim uppercase mb-1", "Асимметричная ценность" } textarea { rows: 2, value: "{value}", class: "bg-tactical-900 text-sm", onchange: move |e| value.set(e.value()) } }
-                    div { class: "flex-col", label { class: "text-xs font-bold text-blue uppercase mb-1", "Стратегия \"Дающего\"" } textarea { rows: 2, value: "{give}", class: "bg-tactical-900 text-sm", onchange: move |e| give.set(e.value()) } }
+                    div { class: "flex-col", label { class: "text-xs font-bold text-dim uppercase mb-1", "Асимметричная ценность" } textarea { rows: 2, value: "{value}", class: "bg-tactical-900 text-sm", onchange: move |evt| value.set(evt.value()) } }
+                    div { class: "flex-col", label { class: "text-xs font-bold text-blue uppercase mb-1", "Стратегия \"Дающего\"" } textarea { rows: 2, value: "{give}", class: "bg-tactical-900 text-sm", onchange: move |evt| give.set(evt.value()) } }
                 }
 
                 div { class: "p-6 border-t border-accent flex justify-between items-center bg-tactical-900",
                     button {
                         class: "text-red text-sm hover:underline cursor-pointer",
-                        onclick: { let db = db.clone();  move |evt| {
+                        onclick: { let db = db.clone(); let on_close = on_close.clone(); move |evt| {
+                            // Delete
                             let _ = db.execute("DELETE FROM perimetr_network WHERE id = ?1", rusqlite::params![c_id_del.clone()]);
+
+                            // Cleanup links from other contacts referencing this one
+                            let all_contacts = db.query_map("SELECT id, links FROM perimetr_network", [], |r| { Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)) }).unwrap_or_default();
+                            for (other_id, other_links) in all_contacts {
+                                if other_links.contains(&c_id_del) {
+                                    let new_links: Vec<&str> = other_links.split(',').filter(|l| *l != c_id_del).collect();
+                                    let _ = db.execute("UPDATE perimetr_network SET links=?1 WHERE id=?2", rusqlite::params![new_links.join(","), other_id]);
+                                }
+                            }
+
                             let updated = db.query_map("SELECT id, name, callsign, role, circle, contact, last_date, next_date, notes, m, i, c, e, value, give, links FROM perimetr_network", [], |row| { Ok(NetworkContact { id: row.get(0)?, name: row.get(1)?, callsign: row.get(2)?, role: row.get(3)?, circle: row.get(4)?, contact: row.get(5).unwrap_or_default(), last_date: row.get(6).unwrap_or_default(), next_date: row.get(7).unwrap_or_default(), notes: row.get(8).unwrap_or_default(), m: row.get(9).unwrap_or_default(), i: row.get(10).unwrap_or_default(), c: row.get(11).unwrap_or_default(), e: row.get(12).unwrap_or_default(), value: row.get(13).unwrap_or_default(), give: row.get(14).unwrap_or_default(), links: row.get(15).unwrap_or_default() }) }).unwrap_or_default();
                             contacts.set(updated);
                             on_close.call(evt);
@@ -444,9 +528,11 @@ fn AssetModal(contact: NetworkContact, mut contacts: Signal<Vec<NetworkContact>>
                         button { class: "text-dim hover:text-white transition-colors px-4 py-2 text-sm", onclick: move |evt| on_close.call(evt), "Отмена" }
                         button {
                             class: "btn-primary",
-                            onclick: { let db = db.clone();  move |evt| {
-                                let _ = db.execute("UPDATE perimetr_network SET name=?1, callsign=?2, role=?3, circle=?4, contact=?5, last_date=?6, next_date=?7, notes=?8, m=?9, i=?10, c=?11, e=?12, value=?13, give=?14 WHERE id=?15",
-                                    rusqlite::params![name(), callsign(), role(), circle(), contact_info(), last_date(), next_date(), notes(), m(), i(), c(), e(), value(), give(), c_id.clone()]);
+                            onclick: { let db = db.clone(); let on_close = on_close.clone(); move |evt| {
+                                let l = links().join(",");
+                                let _ = db.execute("UPDATE perimetr_network SET name=?1, callsign=?2, role=?3, circle=?4, contact=?5, last_date=?6, next_date=?7, notes=?8, m=?9, i=?10, c=?11, e=?12, value=?13, give=?14, links=?15 WHERE id=?16",
+                                    rusqlite::params![name(), callsign(), role(), circle(), contact_info(), last_date(), next_date(), notes(), m(), i(), c(), e(), value(), give(), l, c_id.clone()]);
+
                                 let updated = db.query_map("SELECT id, name, callsign, role, circle, contact, last_date, next_date, notes, m, i, c, e, value, give, links FROM perimetr_network", [], |row| { Ok(NetworkContact { id: row.get(0)?, name: row.get(1)?, callsign: row.get(2)?, role: row.get(3)?, circle: row.get(4)?, contact: row.get(5).unwrap_or_default(), last_date: row.get(6).unwrap_or_default(), next_date: row.get(7).unwrap_or_default(), notes: row.get(8).unwrap_or_default(), m: row.get(9).unwrap_or_default(), i: row.get(10).unwrap_or_default(), c: row.get(11).unwrap_or_default(), e: row.get(12).unwrap_or_default(), value: row.get(13).unwrap_or_default(), give: row.get(14).unwrap_or_default(), links: row.get(15).unwrap_or_default() }) }).unwrap_or_default();
                                 contacts.set(updated);
                                 on_close.call(evt);
