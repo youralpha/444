@@ -1,0 +1,11 @@
+[application]
+name = "perimetr-app"
+default_platform = "desktop"
+out_dir = "dist"
+asset_dir = "assets"
+
+[web.app]
+title = "ПЕРИМЕТР v4.0"
+
+[web.resource]
+style = ["assets/style.css"]
