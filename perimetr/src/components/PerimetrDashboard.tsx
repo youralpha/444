@@ -6,7 +6,7 @@ import { getCycles, ProtocolTask } from '../lib/perimetrTasks';
 import { X, CheckSquare, Settings2, Trash2 } from 'lucide-react';
 
 export default function PerimetrDashboard() {
-  const [state, setState] = useState({ score: 0, mission: '', bullets: '', phase0: '', phase1: '' });
+  const [state, setState] = useState({ score: 0, mission: '', bullets: '', phase0: '', phase1: '', overlay_position: 'bottom' });
   const [contacts, setContacts] = useState<any[]>([]);
   const [customTasks, setCustomTasks] = useState<any[]>([]);
 
@@ -92,9 +92,18 @@ export default function PerimetrDashboard() {
           <textarea className="w-full bg-tactical-900 border border-tactical-700 rounded p-3 text-sm focus:border-tactical-accent outline-none custom-scrollbar resize-none" rows={4}
             value={state.mission} onChange={e => handleStateChange('mission', e.target.value)} placeholder="КТО:\nЧТО:\nКОГДА:\nЗАЧЕМ:" />
         </div>
-        <div className="cyber-border flex flex-col gap-2">
-          <label className="text-xs font-bold text-orange-400 uppercase">Три Пули (Фокус дня)</label>
-          <textarea className="w-full bg-tactical-900 border border-orange-500/30 rounded p-3 text-sm focus:border-orange-500 outline-none custom-scrollbar resize-none" rows={4}
+        <div className="cyber-border flex flex-col gap-2 relative">
+          <div className="flex justify-between items-center">
+            <label className="text-xs font-bold text-orange-400 uppercase">Три Пули (Фокус дня)</label>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-tactical-text/50 uppercase font-bold">Оверлей:</span>
+              <select value={state.overlay_position} onChange={e => handleStateChange('overlay_position', e.target.value)} className="bg-tactical-900 border border-tactical-700 text-xs text-white rounded outline-none px-1">
+                 <option value="bottom">Снизу</option>
+                 <option value="top">Сверху</option>
+              </select>
+            </div>
+          </div>
+          <textarea className="w-full bg-tactical-900 border border-orange-500/30 rounded p-3 text-sm focus:border-orange-500 outline-none custom-scrollbar resize-none flex-1 mt-1"
             value={state.bullets} onChange={e => handleStateChange('bullets', e.target.value)} placeholder="1.\n2.\n3." />
         </div>
       </div>
@@ -108,7 +117,7 @@ export default function PerimetrDashboard() {
           ))}
         </Tabs.List>
 
-        <Tabs.Content value="tasks" className="flex-1 overflow-y-auto custom-scrollbar">
+        <Tabs.Content value="tasks" className="flex-1 overflow-y-auto custom-scrollbar outline-none">
           <div className="grid grid-cols-2 gap-6 pb-12">
             {cycles.map((cycle: any) => (
               <div key={cycle.id} className="cyber-border flex flex-col min-h-full">
@@ -118,7 +127,7 @@ export default function PerimetrDashboard() {
                     <TaskItem key={task.id} task={task} onClick={() => setSelectedTask(task)} />
                   ))}
                 </div>
-                <button onClick={() => setCreatingTaskCycle(cycle.id)} className="w-full mt-4 py-2 border border-dashed border-tactical-700 text-tactical-text/50 hover:text-tactical-accent hover:border-tactical-accent rounded-sm text-xs font-bold uppercase transition-colors">
+                <button onClick={() => setCreatingTaskCycle(cycle.id)} className="w-full mt-4 py-2 border border-dashed border-tactical-700 text-tactical-text/50 hover:text-tactical-accent hover:border-tactical-accent rounded-sm text-xs font-bold uppercase transition-colors outline-none">
                   + Добавить кастомную задачу
                 </button>
               </div>
@@ -126,10 +135,10 @@ export default function PerimetrDashboard() {
           </div>
         </Tabs.Content>
 
-        <Tabs.Content value="network" className="flex-1 overflow-y-auto custom-scrollbar pb-12">
+        <Tabs.Content value="network" className="flex-1 overflow-y-auto custom-scrollbar pb-12 outline-none">
           <div className="flex justify-between items-center mb-6">
             <h2 className="font-bold uppercase tracking-wider text-tactical-text">Инженерия Социального Капитала</h2>
-            <button onClick={createContact} className="bg-tactical-accent text-tactical-900 px-4 py-2 font-bold text-xs rounded hover:bg-emerald-400 transition-colors uppercase">+ Новый Агент</button>
+            <button onClick={createContact} className="bg-tactical-accent text-tactical-900 px-4 py-2 font-bold text-xs rounded hover:bg-emerald-400 transition-colors uppercase outline-none">+ Новый Агент</button>
           </div>
           {['1', '2', '3', '4'].map(circleId => {
             const cirContacts = contacts.filter(c => c.circle === circleId);
@@ -138,7 +147,7 @@ export default function PerimetrDashboard() {
                 <h3 className="text-xs font-bold text-tactical-accent uppercase mb-4">Круг {circleId}</h3>
                 <div className="grid grid-cols-3 gap-4">
                   {cirContacts.map(contact => (
-                    <div key={contact.id} className="p-4 bg-tactical-800 border border-tactical-700 rounded flex flex-col hover:bg-tactical-700 cursor-pointer transition-colors group" onClick={() => setSelectedAsset(contact)}>
+                    <div key={contact.id} className="p-4 bg-tactical-800 border border-tactical-700 rounded flex flex-col hover:bg-tactical-700 cursor-pointer transition-colors group outline-none" onClick={() => setSelectedAsset(contact)}>
                       <div className="flex justify-between items-start mb-2">
                         <span className="font-bold text-sm text-white group-hover:text-tactical-accent">{contact.name || 'Без Имени'}</span>
                         <span className="text-[10px] text-orange-400">«{contact.callsign}»</span>
@@ -151,7 +160,7 @@ export default function PerimetrDashboard() {
                             e.stopPropagation();
                             await invoke('save_contact', { contact: { ...contact, circle: c } });
                             fetchContacts();
-                          }} className="text-[10px] text-tactical-text/40 border border-tactical-700 px-2 py-1 hover:bg-tactical-accent hover:text-tactical-900 rounded-sm transition-colors">
+                          }} className="text-[10px] text-tactical-text/40 border border-tactical-700 px-2 py-1 hover:bg-tactical-accent hover:text-tactical-900 rounded-sm transition-colors outline-none">
                             → {c}
                           </button>
                         ))}
@@ -164,7 +173,7 @@ export default function PerimetrDashboard() {
           })}
         </Tabs.Content>
 
-        <Tabs.Content value="plan" className="flex-1 overflow-y-auto custom-scrollbar pb-12">
+        <Tabs.Content value="plan" className="flex-1 overflow-y-auto custom-scrollbar pb-12 outline-none">
            <div className="grid gap-6">
               <div className="cyber-border flex flex-col gap-3">
                 <h3 className="text-sm font-bold text-tactical-accent uppercase">Фаза 0: Рекогносцировка себя (H2F)</h3>
@@ -192,7 +201,7 @@ export default function PerimetrDashboard() {
       <Dialog.Root open={!!creatingTaskCycle} onOpenChange={(open) => !open && setCreatingTaskCycle(null)}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 fade-in" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-3rem)] max-w-md bg-tactical-800 border border-tactical-700 rounded-sm shadow-2xl z-50 flex flex-col fade-in p-6">
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-3rem)] max-w-md bg-tactical-800 border border-tactical-700 rounded-sm shadow-2xl z-50 flex flex-col fade-in p-6 outline-none">
             <h2 className="text-lg font-bold text-white uppercase mb-4 border-b border-tactical-700 pb-2">Новая Задача</h2>
             <div className="flex flex-col gap-4 mb-6">
               <div>
@@ -209,8 +218,8 @@ export default function PerimetrDashboard() {
               </div>
             </div>
             <div className="flex justify-end gap-3">
-               <button onClick={() => setCreatingTaskCycle(null)} className="text-tactical-text/50 text-sm font-bold uppercase hover:text-white transition-colors">Отмена</button>
-               <button onClick={submitNewTask} className="bg-tactical-accent text-tactical-900 px-4 py-2 font-bold text-sm rounded hover:bg-emerald-400 transition-colors uppercase">Создать</button>
+               <button onClick={() => setCreatingTaskCycle(null)} className="text-tactical-text/50 text-sm font-bold uppercase hover:text-white transition-colors outline-none">Отмена</button>
+               <button onClick={submitNewTask} className="bg-tactical-accent text-tactical-900 px-4 py-2 font-bold text-sm rounded hover:bg-emerald-400 transition-colors uppercase outline-none">Создать</button>
             </div>
           </Dialog.Content>
         </Dialog.Portal>
@@ -220,7 +229,7 @@ export default function PerimetrDashboard() {
       <Dialog.Root open={!!selectedAsset} onOpenChange={(open) => !open && setSelectedAsset(null)}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] fade-in" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-3rem)] max-w-4xl bg-tactical-800 border border-tactical-700 rounded-sm shadow-2xl z-[60] flex flex-col max-h-[calc(100vh-3rem)] fade-in p-0 overflow-hidden">
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-3rem)] max-w-4xl bg-tactical-800 border border-tactical-700 rounded-sm shadow-2xl z-[60] flex flex-col max-h-[calc(100vh-3rem)] fade-in p-0 overflow-hidden outline-none">
             {selectedAsset && <AssetModalInner contact={selectedAsset} contacts={contacts} refresh={fetchContacts} onClose={() => setSelectedAsset(null)} />}
           </Dialog.Content>
         </Dialog.Portal>
@@ -251,7 +260,7 @@ function TaskItem({ task, onClick }: { task: ProtocolTask, onClick: () => void }
   return (
     <div onClick={onClick} className="flex items-center justify-between p-3 hover:bg-tactical-900 rounded cursor-pointer border border-transparent hover:border-tactical-700 transition-all group">
       <div className="flex items-center gap-3">
-        <button onClick={toggle} className={`w-5 h-5 border-2 rounded-sm flex items-center justify-center transition-colors ${done ? 'bg-tactical-accent border-tactical-accent' : 'border-tactical-accent bg-transparent hover:bg-tactical-accent/20'}`}>
+        <button onClick={toggle} className={`w-5 h-5 border-2 rounded-sm flex items-center justify-center transition-colors outline-none ${done ? 'bg-tactical-accent border-tactical-accent' : 'border-tactical-accent bg-transparent hover:bg-tactical-accent/20'}`}>
           {done && <CheckSquare size={14} className="text-tactical-900" />}
         </button>
         <span className={`text-sm ${done ? 'line-through text-tactical-text/40' : 'text-tactical-text group-hover:text-tactical-accent'}`}>{task.text}</span>
@@ -326,18 +335,18 @@ function TaskModalInner({ task, onClose }: { task: ProtocolTask, onClose: () => 
                    <option value="input">Input Text</option>
                    <option value="number">Number</option>
                  </select>
-                 <button onClick={() => { const nf = [...editData.fields]; nf.splice(i, 1); setEditData({...editData, fields: nf}) }} className="text-red-500 hover:text-red-400 p-2"><Trash2 size={16}/></button>
+                 <button onClick={() => { const nf = [...editData.fields]; nf.splice(i, 1); setEditData({...editData, fields: nf}) }} className="text-red-500 hover:text-red-400 p-2 outline-none"><Trash2 size={16}/></button>
                </div>
              ))}
              <button onClick={() => {
                 const newField = { id: `f${Date.now()}`, label: 'Новое поле', type_: 'textarea', placeholder: '' };
                 setEditData({...editData, fields: [...editData.fields, newField]});
-             }} className="text-xs text-tactical-accent hover:underline self-start mt-2">+ Добавить поле</button>
+             }} className="text-xs text-tactical-accent hover:underline self-start mt-2 outline-none">+ Добавить поле</button>
           </div>
         </div>
         <div className="p-6 border-t border-tactical-700 bg-tactical-800 flex justify-between items-center">
-          <button onClick={() => setEditMode(false)} className="text-tactical-text/50 hover:text-white uppercase font-bold text-sm">Отмена</button>
-          <button onClick={saveEdit} className="px-6 py-2 bg-tactical-accent text-tactical-900 font-bold text-sm uppercase rounded hover:bg-emerald-400 transition-colors">Сохранить</button>
+          <button onClick={() => setEditMode(false)} className="text-tactical-text/50 hover:text-white uppercase font-bold text-sm outline-none">Отмена</button>
+          <button onClick={saveEdit} className="px-6 py-2 bg-tactical-accent text-tactical-900 font-bold text-sm uppercase rounded hover:bg-emerald-400 transition-colors outline-none">Сохранить</button>
         </div>
       </>
     );
@@ -353,11 +362,11 @@ function TaskModalInner({ task, onClose }: { task: ProtocolTask, onClose: () => 
         <div className="flex items-center gap-4">
           {task.is_custom && (
              <div className="flex gap-3">
-               <button onClick={()=>setEditMode(true)} className="text-xs font-bold text-tactical-text/50 hover:text-white uppercase flex items-center gap-1"><Settings2 size={16}/> Редакт</button>
-               <button onClick={removeTask} className="text-xs font-bold text-red-500 hover:text-red-400 uppercase flex items-center gap-1"><Trash2 size={16}/> Удал</button>
+               <button onClick={()=>setEditMode(true)} className="text-xs font-bold text-tactical-text/50 hover:text-white uppercase flex items-center gap-1 outline-none"><Settings2 size={16}/> Редакт</button>
+               <button onClick={removeTask} className="text-xs font-bold text-red-500 hover:text-red-400 uppercase flex items-center gap-1 outline-none"><Trash2 size={16}/> Удал</button>
              </div>
           )}
-          <button onClick={onClose} className="text-tactical-text/50 hover:text-white ml-2"><X size={20} /></button>
+          <button onClick={onClose} className="text-tactical-text/50 hover:text-white ml-2 outline-none"><X size={20} /></button>
         </div>
       </div>
       <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-tactical-900">
@@ -378,13 +387,13 @@ function TaskModalInner({ task, onClose }: { task: ProtocolTask, onClose: () => 
         </div>
       </div>
       <div className="p-6 border-t border-tactical-700 bg-tactical-800 flex justify-between items-center">
-        <button onClick={toggleDone} className="flex items-center gap-3 group">
+        <button onClick={toggleDone} className="flex items-center gap-3 group outline-none">
           <div className={`w-6 h-6 border-2 rounded-sm flex items-center justify-center transition-colors ${done ? 'bg-tactical-accent border-tactical-accent' : 'border-tactical-accent bg-transparent group-hover:bg-tactical-accent/20'}`}>
             {done && <CheckSquare size={16} className="text-tactical-900" />}
           </div>
           <span className="font-bold text-sm uppercase">{done ? 'Выполнено' : 'Отметить как Выполнено'}</span>
         </button>
-        <button onClick={onClose} className="px-6 py-2 bg-tactical-accent text-tactical-900 font-bold text-sm uppercase rounded hover:bg-emerald-400 transition-colors">Закрыть</button>
+        <button onClick={onClose} className="px-6 py-2 bg-tactical-accent text-tactical-900 font-bold text-sm uppercase rounded hover:bg-emerald-400 transition-colors outline-none">Закрыть</button>
       </div>
     </>
   );
@@ -415,7 +424,7 @@ function AssetModalInner({ contact, contacts, refresh, onClose }: { contact: any
     <>
       <div className="flex justify-between items-start p-6 border-b border-tactical-700 bg-tactical-800">
         <h2 className="text-xl font-bold uppercase tracking-wider text-white">Досье Агента</h2>
-        <button onClick={onClose} className="text-tactical-text/50 hover:text-white"><X size={20} /></button>
+        <button onClick={onClose} className="text-tactical-text/50 hover:text-white outline-none"><X size={20} /></button>
       </div>
       <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-tactical-900 grid grid-cols-2 gap-8">
 
@@ -470,17 +479,17 @@ function AssetModalInner({ contact, contacts, refresh, onClose }: { contact: any
                   <option value="">Связать с...</option>
                   {unlinkedContacts.map(c => <option key={c.id} value={c.id}>{c.name || 'Без Имени'} ({c.role})</option>)}
                 </select>
-                <button onClick={()=>{ if(newLink) { setLinks([...links, newLink]); setNewLink(''); } }} className="bg-tactical-700 hover:bg-tactical-600 px-3 rounded text-xs font-bold transition-colors">Добавить</button>
+                <button onClick={()=>{ if(newLink) { setLinks([...links, newLink]); setNewLink(''); } }} className="bg-tactical-700 hover:bg-tactical-600 px-3 rounded text-xs font-bold transition-colors outline-none">Добавить</button>
               </div>
            </div>
         </div>
 
       </div>
       <div className="p-6 border-t border-tactical-700 bg-tactical-800 flex justify-between items-center">
-        <button onClick={remove} className="text-red-500 hover:underline text-xs uppercase font-bold tracking-wider">Удалить Досье</button>
+        <button onClick={remove} className="text-red-500 hover:underline text-xs uppercase font-bold tracking-wider outline-none">Удалить Досье</button>
         <div className="flex gap-3">
-          <button onClick={onClose} className="px-6 py-2 text-tactical-text/50 hover:text-white font-bold text-sm uppercase rounded transition-colors">Отмена</button>
-          <button onClick={save} className="px-6 py-2 bg-tactical-accent text-tactical-900 font-bold text-sm uppercase rounded hover:bg-emerald-400 transition-colors">Сохранить</button>
+          <button onClick={onClose} className="px-6 py-2 text-tactical-text/50 hover:text-white font-bold text-sm uppercase rounded transition-colors outline-none">Отмена</button>
+          <button onClick={save} className="px-6 py-2 bg-tactical-accent text-tactical-900 font-bold text-sm uppercase rounded hover:bg-emerald-400 transition-colors outline-none">Сохранить</button>
         </div>
       </div>
     </>

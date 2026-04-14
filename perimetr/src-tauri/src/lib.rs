@@ -1,25 +1,49 @@
 use tauri::{State, Manager, AppHandle, PhysicalPosition, Emitter, WindowEvent};
+use std::thread;
 mod db;
 use db::{Db, GeneralState, NetworkContact, CustomTask, TaskHistory, TimerState, TimerTask, KptState};
 
 #[tauri::command]
 fn get_general_state(state: State<'_, Db>) -> Result<GeneralState, String> {
     let conn = state.conn.lock().unwrap();
-    let score: i32 = conn.query_row("SELECT score FROM perimetr_state WHERE id = 1", [], |r| r.get(0)).unwrap_or(0);
+    let (score, overlay_position): (i32, String) = conn.query_row("SELECT score, overlay_pos FROM perimetr_state WHERE id = 1", [], |r| Ok((r.get(0)?, r.get(1)?))).unwrap_or((0, "bottom".into()));
     let (mission, bullets): (String, String) = conn.query_row("SELECT mission, bullets FROM perimetr_focus WHERE id = 1", [], |r| Ok((r.get(0)?, r.get(1)?))).unwrap_or(("".into(), "".into()));
     let (phase0, phase1): (String, String) = conn.query_row("SELECT phase0, phase1 FROM perimetr_plan WHERE id = 1", [], |r| Ok((r.get(0)?, r.get(1)?))).unwrap_or(("".into(), "".into()));
-    Ok(GeneralState { score, mission, bullets, phase0, phase1 })
+    Ok(GeneralState { score, mission, bullets, phase0, phase1, overlay_position })
 }
 
 #[tauri::command]
 fn save_general_state(state: State<'_, Db>, gs: GeneralState, app: AppHandle) -> Result<(), String> {
     let conn = state.conn.lock().unwrap();
-    conn.execute("UPDATE perimetr_state SET score = ? WHERE id = 1", [gs.score]).map_err(|e| e.to_string())?;
-    conn.execute("UPDATE perimetr_focus SET mission = ?, bullets = ? WHERE id = 1", [gs.mission, gs.bullets.clone()]).map_err(|e| e.to_string())?;
-    conn.execute("UPDATE perimetr_plan SET phase0 = ?, phase1 = ? WHERE id = 1", [gs.phase0, gs.phase1]).map_err(|e| e.to_string())?;
+    conn.execute("UPDATE perimetr_state SET score = ?, overlay_pos = ? WHERE id = 1", (gs.score, &gs.overlay_position)).map_err(|e| e.to_string())?;
+    conn.execute("UPDATE perimetr_focus SET mission = ?, bullets = ? WHERE id = 1", (gs.mission, gs.bullets.clone())).map_err(|e| e.to_string())?;
+    conn.execute("UPDATE perimetr_plan SET phase0 = ?, phase1 = ? WHERE id = 1", (gs.phase0, gs.phase1)).map_err(|e| e.to_string())?;
 
     // Broadcast update to overlay window if it exists
     let _ = app.emit("bullets_updated", gs.bullets);
+
+    // Also reposition overlay if it changed
+    if let Some(overlay_window) = app.get_webview_window("overlay") {
+        if let Ok(Some(monitor)) = overlay_window.primary_monitor() {
+            let size = monitor.size();
+            let scale_factor = monitor.scale_factor();
+            let overlay_width = 1000.0 * scale_factor;
+            let overlay_height = 50.0 * scale_factor;
+
+            let y_pos = if gs.overlay_position == "top" {
+                0.0
+            } else {
+                (size.height as f64) - overlay_height
+            };
+
+            let pos = PhysicalPosition::new(
+                ((size.width as f64) / 2.0 - overlay_width / 2.0) as i32,
+                y_pos as i32,
+            );
+            let _ = overlay_window.set_position(tauri::Position::Physical(pos));
+        }
+    }
+
     Ok(())
 }
 
@@ -213,28 +237,51 @@ pub fn run() {
                 .visible(false)
                 .build()?;
 
-            // Calculate screen bottom to position overlay
-            if let Ok(Some(monitor)) = overlay_window.primary_monitor() {
-                let size = monitor.size();
-                let scale_factor = monitor.scale_factor();
-                let overlay_width = 1000.0 * scale_factor;
-                let overlay_height = 50.0 * scale_factor;
-                let pos = PhysicalPosition::new(
-                    (size.width as f64 / 2.0 - overlay_width / 2.0) as i32,
-                    (size.height as f64 - overlay_height) as i32,
-                );
-                let _ = overlay_window.set_position(tauri::Position::Physical(pos));
-            }
-
             let overlay_clone = overlay_window.clone();
+            let app_handle = app.handle().clone();
 
             if let Some(main_window) = app.get_webview_window("main") {
                 main_window.on_window_event(move |event| match event {
                     WindowEvent::Focused(focused) => {
+                        // Do not use database lock here to prevent deadlock with other IPC calls.
+                        // Instead, we spawn a brief thread or just fire a lightweight event.
+                        let overlay_c = overlay_clone.clone();
+                        let app_h = app_handle.clone();
                         if *focused {
-                            let _ = overlay_clone.hide();
+                            let _ = overlay_c.hide();
                         } else {
-                            let _ = overlay_clone.show();
+                            thread::spawn(move || {
+                                // Retrieve overlay_pos gracefully
+                                let mut overlay_pos = String::from("bottom");
+                                if let Some(state) = app_h.try_state::<Db>() {
+                                    if let Ok(conn) = state.conn.lock() {
+                                        if let Ok(pos) = conn.query_row("SELECT overlay_pos FROM perimetr_state WHERE id = 1", [], |r| r.get(0)) {
+                                            overlay_pos = pos;
+                                        }
+                                    }
+                                }
+
+                                // Now we show and reposition
+                                let _ = overlay_c.show();
+                                if let Ok(Some(monitor)) = overlay_c.primary_monitor() {
+                                    let size = monitor.size();
+                                    let scale_factor = monitor.scale_factor();
+                                    let overlay_width = 1000.0 * scale_factor;
+                                    let overlay_height = 50.0 * scale_factor;
+
+                                    let y_pos = if overlay_pos == "top" {
+                                        0.0
+                                    } else {
+                                        (size.height as f64) - overlay_height
+                                    };
+
+                                    let pos = PhysicalPosition::new(
+                                        ((size.width as f64) / 2.0 - overlay_width / 2.0) as i32,
+                                        y_pos as i32,
+                                    );
+                                    let _ = overlay_c.set_position(tauri::Position::Physical(pos));
+                                }
+                            });
                         }
                     }
                     _ => {}

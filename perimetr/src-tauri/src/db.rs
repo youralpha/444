@@ -9,6 +9,7 @@ pub struct GeneralState {
     pub bullets: String,
     pub phase0: String,
     pub phase1: String,
+    pub overlay_position: String, // 'top' or 'bottom'
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -84,7 +85,11 @@ impl Db {
     fn init_schema(&self) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         // Perimetr Global
-        conn.execute("CREATE TABLE IF NOT EXISTS perimetr_state (id INTEGER PRIMARY KEY, score INTEGER DEFAULT 0)", [])?;
+        conn.execute("CREATE TABLE IF NOT EXISTS perimetr_state (id INTEGER PRIMARY KEY, score INTEGER DEFAULT 0, overlay_pos TEXT DEFAULT 'bottom')", [])?;
+
+        // ADD COLUMN IF NOT EXISTS (SQLite workaround: try to add, ignore error if it exists)
+        let _ = conn.execute("ALTER TABLE perimetr_state ADD COLUMN overlay_pos TEXT DEFAULT 'bottom'", []);
+
         conn.execute("CREATE TABLE IF NOT EXISTS perimetr_plan (id INTEGER PRIMARY KEY, phase0 TEXT, phase1 TEXT)", [])?;
         conn.execute("CREATE TABLE IF NOT EXISTS perimetr_focus (id INTEGER PRIMARY KEY, mission TEXT, bullets TEXT)", [])?;
 
@@ -117,7 +122,7 @@ impl Db {
         conn.execute("CREATE TABLE IF NOT EXISTS kpt_inputs (input_id TEXT PRIMARY KEY, value TEXT)", [])?;
         conn.execute("CREATE TABLE IF NOT EXISTS kpt_calendar (date TEXT PRIMARY KEY, has_activity BOOLEAN)", [])?;
 
-        conn.execute("INSERT OR IGNORE INTO perimetr_state (id, score) VALUES (1, 0)", [])?;
+        conn.execute("INSERT OR IGNORE INTO perimetr_state (id, score, overlay_pos) VALUES (1, 0, 'bottom')", [])?;
         conn.execute("INSERT OR IGNORE INTO perimetr_plan (id, phase0, phase1) VALUES (1, '', '')", [])?;
         conn.execute("INSERT OR IGNORE INTO perimetr_focus (id, mission, bullets) VALUES (1, '', '')", [])?;
         conn.execute("INSERT OR IGNORE INTO timer_state (id, running, elapsed, current_task) VALUES (1, 0, 0, '')", [])?;
