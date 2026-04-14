@@ -24,6 +24,16 @@
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { @apply bg-tactical-700 rounded-full; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { @apply bg-tactical-accent; }
+
+    .calendar-grid {
+        @apply grid grid-cols-7 gap-2;
+    }
+    .cal-day {
+        @apply flex items-center justify-center w-8 h-8 rounded border border-tactical-700 bg-tactical-900 text-xs font-mono text-tactical-text/50 transition-colors;
+    }
+    .cal-day.active {
+        @apply border-emerald-500 bg-emerald-500/20 text-emerald-400 font-bold shadow-[0_0_8px_rgba(16,185,129,0.3)];
+    }
 }
 
 @keyframes slideUp {

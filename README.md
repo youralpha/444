@@ -18,10 +18,10 @@ sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicat
 
 ## 2. Запуск в режиме разработки
 
-Перейдите в директорию `perimetr-app` и выполните команду `cargo run`. Cargo автоматически скачает все крейты (зависимости), скомпилирует проект и откроет окно приложения:
+Перейдите в директорию `perimetr` и выполните команду `cargo run`. Cargo автоматически скачает все крейты (зависимости), скомпилирует проект и откроет окно приложения:
 
 ```bash
-cd perimetr-app
+cd perimetr
 cargo run
 ```
 
@@ -30,11 +30,11 @@ cargo run
 Чтобы скомпилировать быстрый, автономный и оптимизированный исполняемый файл без дебаггера, выполните:
 
 ```bash
-cd perimetr-app
+cd perimetr
 cargo build --release
 ```
 
-После компиляции исполняемый файл приложения можно будет найти в директории `perimetr-app/target/release/perimetr-app` (или `.exe` для Windows).
+После компиляции исполняемый файл приложения можно будет найти в директории `perimetr/target/release/perimetr` (или `.exe` для Windows).
 
 ## 4. Локальное хранилище данных
 
