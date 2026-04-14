@@ -1,4 +1,4 @@
-use tauri::State;
+use tauri::{State, Manager, AppHandle, PhysicalPosition, Emitter, WindowEvent};
 mod db;
 use db::{Db, GeneralState, NetworkContact, CustomTask, TaskHistory, TimerState, TimerTask, KptState};
 
@@ -12,11 +12,14 @@ fn get_general_state(state: State<'_, Db>) -> Result<GeneralState, String> {
 }
 
 #[tauri::command]
-fn save_general_state(state: State<'_, Db>, gs: GeneralState) -> Result<(), String> {
+fn save_general_state(state: State<'_, Db>, gs: GeneralState, app: AppHandle) -> Result<(), String> {
     let conn = state.conn.lock().unwrap();
     conn.execute("UPDATE perimetr_state SET score = ? WHERE id = 1", [gs.score]).map_err(|e| e.to_string())?;
-    conn.execute("UPDATE perimetr_focus SET mission = ?, bullets = ? WHERE id = 1", [gs.mission, gs.bullets]).map_err(|e| e.to_string())?;
+    conn.execute("UPDATE perimetr_focus SET mission = ?, bullets = ? WHERE id = 1", [gs.mission, gs.bullets.clone()]).map_err(|e| e.to_string())?;
     conn.execute("UPDATE perimetr_plan SET phase0 = ?, phase1 = ? WHERE id = 1", [gs.phase0, gs.phase1]).map_err(|e| e.to_string())?;
+
+    // Broadcast update to overlay window if it exists
+    let _ = app.emit("bullets_updated", gs.bullets);
     Ok(())
 }
 
@@ -199,6 +202,47 @@ pub fn run() {
     tauri::Builder::default()
         .manage(db)
         .plugin(tauri_plugin_opener::init())
+        .setup(|app| {
+            let overlay_window = tauri::WebviewWindowBuilder::new(app, "overlay", tauri::WebviewUrl::App("index.html?overlay=true".into()))
+                .title("Perimetr Overlay")
+                .inner_size(1000.0, 50.0)
+                .decorations(false)
+                .transparent(true)
+                .always_on_top(true)
+                .skip_taskbar(true)
+                .visible(false)
+                .build()?;
+
+            // Calculate screen bottom to position overlay
+            if let Ok(Some(monitor)) = overlay_window.primary_monitor() {
+                let size = monitor.size();
+                let scale_factor = monitor.scale_factor();
+                let overlay_width = 1000.0 * scale_factor;
+                let overlay_height = 50.0 * scale_factor;
+                let pos = PhysicalPosition::new(
+                    (size.width as f64 / 2.0 - overlay_width / 2.0) as i32,
+                    (size.height as f64 - overlay_height) as i32,
+                );
+                let _ = overlay_window.set_position(tauri::Position::Physical(pos));
+            }
+
+            let overlay_clone = overlay_window.clone();
+
+            if let Some(main_window) = app.get_webview_window("main") {
+                main_window.on_window_event(move |event| match event {
+                    WindowEvent::Focused(focused) => {
+                        if *focused {
+                            let _ = overlay_clone.hide();
+                        } else {
+                            let _ = overlay_clone.show();
+                        }
+                    }
+                    _ => {}
+                });
+            }
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             get_general_state, save_general_state,
             get_contacts, save_contact, delete_contact,
