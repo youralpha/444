@@ -291,8 +291,8 @@ export default function BaseTimer() {
 
       <Dialog.Root open={infoOpen} onOpenChange={setInfoOpen}>
         <Dialog.Portal>
-           <Dialog.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 animate-in" />
-           <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-3rem)] max-w-2xl bg-tactical-800 border border-tactical-700 rounded-sm shadow-2xl z-50 flex flex-col p-8 m-6 animate-in">
+           <Dialog.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 fade-in" />
+           <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-3rem)] max-w-2xl bg-tactical-800 border border-tactical-700 rounded-sm shadow-2xl z-50 flex flex-col p-8 fade-in">
              <h2 className="text-xl font-bold uppercase text-white mb-6 border-b border-tactical-700 pb-3">Справочник Техник (Арсенал)</h2>
              <div className="flex flex-col gap-8 mb-6 max-h-[60vh] overflow-y-auto custom-scrollbar pr-4">
                  <p className="text-sm text-tactical-text/80">Все техники скопированы из исходного <strong>BASE.html</strong>.</p>

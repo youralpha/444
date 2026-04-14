@@ -181,8 +181,8 @@ export default function PerimetrDashboard() {
       {/* Task Modal */}
       <Dialog.Root open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 animate-in" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-3rem)] max-w-2xl bg-tactical-800 border border-tactical-700 rounded-sm shadow-2xl z-50 flex flex-col max-h-[calc(100vh-3rem)] m-6 animate-in outline-none p-0 overflow-hidden">
+          <Dialog.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 fade-in" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-3rem)] max-w-2xl bg-tactical-800 border border-tactical-700 rounded-sm shadow-2xl z-50 flex flex-col max-h-[calc(100vh-3rem)] fade-in outline-none p-0 overflow-hidden">
             {selectedTask && <TaskModalInner task={selectedTask} onClose={() => { setSelectedTask(null); fetchCustomTasks(); }} />}
           </Dialog.Content>
         </Dialog.Portal>
@@ -191,8 +191,8 @@ export default function PerimetrDashboard() {
       {/* Create Custom Task Modal */}
       <Dialog.Root open={!!creatingTaskCycle} onOpenChange={(open) => !open && setCreatingTaskCycle(null)}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 animate-in" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-3rem)] max-w-md bg-tactical-800 border border-tactical-700 rounded-sm shadow-2xl z-50 flex flex-col animate-in p-6 m-6">
+          <Dialog.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 fade-in" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-3rem)] max-w-md bg-tactical-800 border border-tactical-700 rounded-sm shadow-2xl z-50 flex flex-col fade-in p-6">
             <h2 className="text-lg font-bold text-white uppercase mb-4 border-b border-tactical-700 pb-2">Новая Задача</h2>
             <div className="flex flex-col gap-4 mb-6">
               <div>
@@ -219,8 +219,8 @@ export default function PerimetrDashboard() {
       {/* Asset Modal */}
       <Dialog.Root open={!!selectedAsset} onOpenChange={(open) => !open && setSelectedAsset(null)}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] animate-in" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-3rem)] max-w-4xl bg-tactical-800 border border-tactical-700 rounded-sm shadow-2xl z-[60] flex flex-col max-h-[calc(100vh-3rem)] m-6 animate-in p-0 overflow-hidden">
+          <Dialog.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] fade-in" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-3rem)] max-w-4xl bg-tactical-800 border border-tactical-700 rounded-sm shadow-2xl z-[60] flex flex-col max-h-[calc(100vh-3rem)] fade-in p-0 overflow-hidden">
             {selectedAsset && <AssetModalInner contact={selectedAsset} contacts={contacts} refresh={fetchContacts} onClose={() => setSelectedAsset(null)} />}
           </Dialog.Content>
         </Dialog.Portal>
