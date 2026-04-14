@@ -2,30 +2,26 @@ import { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Play, Pause, Square, Timer, Wind, Brain, Info, Mic } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
+import { MODES, Phase } from '../lib/modes';
 
-const PHASES = [
-  { id: 'focus', title: 'Deep Work', defaultTime: 50 * 60, icon: <Brain size={24} className="text-orange-400" />,
-    desc: 'Фаза максимальной концентрации. Исключите все отвлечения, закройте вкладки, телефон в авиарежим.',
-    info: 'Focusing without distractions requires immense cognitive effort but yields the highest quality work.'
-  },
-  { id: 'pmr', title: 'PMR (Релаксация)', defaultTime: 10 * 60, icon: <Wind size={24} className="text-blue-400" />,
-    desc: 'Прогрессивная мышечная релаксация. Напрягайте и расслабляйте группы мышц от ног к голове.',
-    info: 'PMR helps reset the autonomic nervous system after periods of high stress or intense focus.'
-  },
-  { id: 'nsdr', title: 'NSDR (Сон)', defaultTime: 20 * 60, icon: <Wind size={24} className="text-purple-400" />,
-    desc: 'Non-Sleep Deep Rest. Лягте на спину, закройте глаза, сфокусируйтесь на дыхании и тяжести тела.',
-    info: 'NSDR (or Yoga Nidra) accelerates learning by facilitating neuroplasticity and dramatically reduces fatigue.'
-  },
-  { id: 'arsenalAuto', title: 'Авто-Тренинг', defaultTime: 15 * 60, icon: <Brain size={24} className="text-green-400" />,
-    desc: 'Аутогенная тренировка по Шульцу. Повторяйте формулы тяжести и тепла в конечностях.',
-    info: 'Autogenic training shifts the body into a deeply restorative parasympathetic state.'
-  },
+const PHASES_DEF = [
+  { id: 'focus', title: 'Deep Work', icon: <Brain size={24} className="text-orange-400" /> },
+  { id: 'hrv', title: 'HRV', icon: <Wind size={24} className="text-blue-400" /> },
+  { id: 'sigh', title: 'Вздох', icon: <Wind size={24} className="text-sky-400" /> },
+  { id: 'pmr', title: 'PMR', icon: <Wind size={24} className="text-emerald-400" /> },
+  { id: 'space', title: 'Space', icon: <Brain size={24} className="text-purple-400" /> },
+  { id: 'nsdr', title: 'NSDR', icon: <Wind size={24} className="text-indigo-400" /> },
+  { id: 'arsenalAuto', title: 'АТ', icon: <Brain size={24} className="text-green-400" /> },
+  { id: 'stopframe', title: 'СТОП-КАДР', icon: <Brain size={24} className="text-red-400" /> },
 ];
 
 export default function BaseTimer() {
   const [running, setRunning] = useState(false);
-  const [activePhase, setActivePhase] = useState(PHASES[0].id);
-  const [seconds, setSeconds] = useState(PHASES[0].defaultTime);
+  const [activePhaseId, setActivePhaseId] = useState(PHASES_DEF[0].id);
+  const [phases, setPhases] = useState<Phase[]>(MODES.focus());
+  const [currentPhaseIdx, setCurrentPhaseIdx] = useState(0);
+  const [seconds, setSeconds] = useState(0); // overall seconds remaining
+
   const [tasks, setTasks] = useState<any[]>([]);
   const [currentTask, setCurrentTask] = useState('');
 
@@ -35,8 +31,7 @@ export default function BaseTimer() {
 
   const reqRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
-  const durationRef = useRef<number>(PHASES[0].defaultTime * 1000);
-  const remainingRef = useRef<number>(PHASES[0].defaultTime * 1000);
+  const remainingPhaseRef = useRef<number>(0);
 
   const fetchTasks = async () => {
     const res: any = await invoke('get_timer_tasks');
@@ -45,25 +40,50 @@ export default function BaseTimer() {
 
   useEffect(() => {
     fetchTasks();
+    initPhases('focus');
     return () => stopTimer();
   }, []);
+
+  const initPhases = (id: string) => {
+    const newPhases = (id === 'hrv') ? MODES.hrv(6.0) : (id === 'space') ? MODES.space(3 * 60 * 1000) : MODES[id]();
+    setPhases(newPhases);
+    setCurrentPhaseIdx(0);
+    remainingPhaseRef.current = newPhases[0].duration;
+
+    const totalMs = newPhases.reduce((acc, p) => acc + p.duration, 0);
+    setSeconds(Math.ceil(totalMs / 1000));
+  };
 
   const updateTimer = (time: number) => {
     if (!lastTimeRef.current) lastTimeRef.current = time;
     const delta = time - lastTimeRef.current;
     lastTimeRef.current = time;
 
-    remainingRef.current -= delta;
-    if (remainingRef.current <= 0) {
-      remainingRef.current = 0;
-      setSeconds(0);
-      stopTimer();
-      setRunning(false);
-      playAlarm();
+    remainingPhaseRef.current -= delta;
+
+    if (remainingPhaseRef.current <= 0) {
+      if (currentPhaseIdx < phases.length - 1) {
+         const nextIdx = currentPhaseIdx + 1;
+         setCurrentPhaseIdx(nextIdx);
+         remainingPhaseRef.current = phases[nextIdx].duration;
+         playAlarm(880, 0.5); // transition beep
+         reqRef.current = requestAnimationFrame(updateTimer);
+      } else {
+         remainingPhaseRef.current = 0;
+         stopTimer();
+         setRunning(false);
+         playAlarm(440, 1.5); // end beep
+      }
     } else {
-      setSeconds(Math.ceil(remainingRef.current / 1000));
       reqRef.current = requestAnimationFrame(updateTimer);
     }
+
+    // Calculate total remaining
+    let totalRem = remainingPhaseRef.current;
+    for(let i = currentPhaseIdx + 1; i < phases.length; i++) {
+        totalRem += phases[i].duration;
+    }
+    setSeconds(Math.ceil(totalRem / 1000));
   };
 
   const startTimer = () => {
@@ -77,7 +97,7 @@ export default function BaseTimer() {
     lastTimeRef.current = null;
   };
 
-  const playAlarm = () => {
+  const playAlarm = (freq: number, dur: number) => {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -85,15 +105,13 @@ export default function BaseTimer() {
     osc.connect(gain);
     gain.connect(ctx.destination);
 
-    osc.frequency.setValueAtTime(440, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
-
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
     gain.gain.setValueAtTime(0, ctx.currentTime);
     gain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
 
     osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 1);
+    osc.stop(ctx.currentTime + dur);
   };
 
   const toggleTimer = () => {
@@ -101,7 +119,7 @@ export default function BaseTimer() {
       stopTimer();
       setRunning(false);
     } else {
-      if (remainingRef.current <= 0) return;
+      if (seconds <= 0) return;
       startTimer();
       setRunning(true);
     }
@@ -110,34 +128,28 @@ export default function BaseTimer() {
   const resetTimer = () => {
     stopTimer();
     setRunning(false);
-    const phase = PHASES.find(p => p.id === activePhase);
-    const def = phase ? phase.defaultTime : 0;
-    durationRef.current = def * 1000;
-    remainingRef.current = def * 1000;
-    setSeconds(def);
+    initPhases(activePhaseId);
   };
 
   const changePhase = (id: string) => {
     stopTimer();
     setRunning(false);
-    setActivePhase(id);
-    const phase = PHASES.find(p => p.id === id);
-    const def = phase ? phase.defaultTime : 0;
-    durationRef.current = def * 1000;
-    remainingRef.current = def * 1000;
-    setSeconds(def);
+    setActivePhaseId(id);
+    initPhases(id);
   };
 
   const saveLog = async () => {
-    const phase = PHASES.find(p => p.id === activePhase);
-    const durSec = Math.floor((durationRef.current - remainingRef.current) / 1000);
+    const totalDef = phases.reduce((acc, p) => acc + p.duration, 0) / 1000;
+    const durSec = Math.floor(totalDef - seconds);
     if (durSec <= 0) return;
+
+    const phaseDef = PHASES_DEF.find(p => p.id === activePhaseId);
 
     await invoke('add_timer_task', { task: {
       id: `bt${Date.now()}`,
       date: new Date().toISOString().split('T')[0],
       duration: durSec,
-      description: currentTask || phase?.title || 'Без описания'
+      description: currentTask || phaseDef?.title || 'Без описания'
     }});
     resetTimer();
     setCurrentTask('');
@@ -172,28 +184,33 @@ export default function BaseTimer() {
         setMediaRecorder(recorder);
         setRecording(true);
       } catch (e) {
-        alert("Microphone access denied or error occurred.");
+        alert("Microphone access denied.");
       }
     }
   };
 
-  const curPhase = PHASES.find(p => p.id === activePhase);
-  const progress = durationRef.current > 0 ? (durationRef.current - remainingRef.current) / durationRef.current : 0;
+  const curPhase = phases[currentPhaseIdx];
+  const progress = curPhase ? (curPhase.duration - remainingPhaseRef.current) / curPhase.duration : 0;
   const radius = 120;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - progress * circumference;
+
+  // Interpolate dashoffset based on startFill to endFill
+  const startF = curPhase ? curPhase.startFill : 0;
+  const endF = curPhase ? curPhase.endFill : 1;
+  const currentFill = startF + (endF - startF) * progress;
+  const strokeDashoffset = circumference - currentFill * circumference;
 
   return (
     <div className="flex flex-col h-full fade-in pb-8">
       <div className="flex items-center gap-3 mb-8">
         <Timer className="text-tactical-accent" size={28} />
-        <h1 className="text-2xl font-mono text-tactical-text uppercase tracking-widest font-bold">База-Таймер</h1>
+        <h1 className="text-2xl font-mono text-tactical-text uppercase tracking-widest font-bold">База-Таймер и Техники</h1>
       </div>
 
-      <div className="flex justify-center gap-4 mb-8">
-         {PHASES.map(p => (
-           <button key={p.id} onClick={() => changePhase(p.id)} className={`flex items-center gap-2 px-4 py-2 border-2 rounded font-bold uppercase transition-all text-xs ${activePhase === p.id ? 'border-tactical-accent bg-tactical-accent/10 text-white shadow-[0_0_10px_rgba(46,204,113,0.2)]' : 'border-tactical-700 text-tactical-text/50 hover:border-tactical-text/50'}`}>
-             {p.icon} <span className="hidden sm:inline">{p.title}</span>
+      <div className="flex justify-center flex-wrap gap-3 mb-8">
+         {PHASES_DEF.map(p => (
+           <button key={p.id} onClick={() => changePhase(p.id)} className={`flex items-center gap-2 px-3 py-2 border-2 rounded font-bold uppercase transition-all text-[10px] ${activePhaseId === p.id ? 'border-tactical-accent bg-tactical-accent/10 text-white shadow-[0_0_10px_rgba(46,204,113,0.2)]' : 'border-tactical-700 text-tactical-text/50 hover:border-tactical-text/50'}`}>
+             {p.icon} {p.title}
            </button>
          ))}
       </div>
@@ -207,11 +224,12 @@ export default function BaseTimer() {
         <div className="relative flex items-center justify-center mb-8">
             <svg width="300" height="300" className="rotate-[-90deg]">
                 <circle cx="150" cy="150" r={radius} fill="transparent" stroke="#1a2e22" strokeWidth="12" />
-                <circle cx="150" cy="150" r={radius} fill="transparent" stroke="#2ecc71" strokeWidth="12"
+                <circle cx="150" cy="150" r={radius} fill="transparent" stroke={curPhase?.color || "#2ecc71"} strokeWidth="12"
                     strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
                     className="transition-all duration-100 ease-linear" />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <div className="text-xs font-bold uppercase text-tactical-text/60 mb-2">{curPhase?.name}</div>
                 <div className={`font-mono text-6xl font-bold tracking-tight ${running ? 'text-white drop-shadow-[0_0_15px_rgba(46,204,113,0.5)]' : 'text-tactical-text'}`}>
                     {formatTime(seconds)}
                 </div>
@@ -219,6 +237,7 @@ export default function BaseTimer() {
         </div>
 
         <div className="text-center text-sm font-mono text-tactical-text/80 mb-6 max-w-md h-12">
+            <strong className="text-white block mb-1">{curPhase?.title || ''}</strong>
             {curPhase?.desc}
         </div>
 
@@ -230,8 +249,8 @@ export default function BaseTimer() {
         />
 
         <div className="flex gap-4 relative z-10">
-           <button onClick={toggleTimer} disabled={remainingRef.current <= 0} className={`flex items-center gap-2 px-8 py-3 rounded font-bold uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed ${running ? 'bg-orange-500/20 text-orange-400 border border-orange-500 hover:bg-orange-500/30' : 'bg-tactical-accent text-tactical-900 hover:bg-emerald-400 shadow-[0_0_15px_rgba(46,204,113,0.4)] hover:shadow-[0_0_25px_rgba(46,204,113,0.6)]'}`}>
-             {running ? <><Pause size={18}/> Пауза</> : <><Play size={18}/> {remainingRef.current > 0 ? 'Старт' : 'Завершено'}</>}
+           <button onClick={toggleTimer} disabled={seconds <= 0} className={`flex items-center gap-2 px-8 py-3 rounded font-bold uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed ${running ? 'bg-orange-500/20 text-orange-400 border border-orange-500 hover:bg-orange-500/30' : 'bg-tactical-accent text-tactical-900 hover:bg-emerald-400 shadow-[0_0_15px_rgba(46,204,113,0.4)] hover:shadow-[0_0_25px_rgba(46,204,113,0.6)]'}`}>
+             {running ? <><Pause size={18}/> Пауза</> : <><Play size={18}/> {seconds > 0 ? 'Старт' : 'Завершено'}</>}
            </button>
            <button onClick={resetTimer} className="flex items-center gap-2 px-6 py-3 rounded border border-tactical-700 text-tactical-text/50 hover:text-white hover:border-tactical-text/50 transition-colors uppercase font-bold text-sm">
              <Square size={16}/> Сброс
@@ -273,13 +292,14 @@ export default function BaseTimer() {
       <Dialog.Root open={infoOpen} onOpenChange={setInfoOpen}>
         <Dialog.Portal>
            <Dialog.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 animate-in" />
-           <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-3rem)] max-w-lg bg-tactical-800 border border-tactical-700 rounded-sm shadow-2xl z-50 flex flex-col p-6 m-6 animate-in">
-             <h2 className="text-lg font-bold uppercase text-white mb-4 border-b border-tactical-700 pb-2">Справка по фазам</h2>
-             <div className="flex flex-col gap-6 mb-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                {PHASES.map(p => (
-                   <div key={p.id}>
+           <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-3rem)] max-w-2xl bg-tactical-800 border border-tactical-700 rounded-sm shadow-2xl z-50 flex flex-col p-8 m-6 animate-in">
+             <h2 className="text-xl font-bold uppercase text-white mb-6 border-b border-tactical-700 pb-3">Справочник Техник (Арсенал)</h2>
+             <div className="flex flex-col gap-8 mb-6 max-h-[60vh] overflow-y-auto custom-scrollbar pr-4">
+                 <p className="text-sm text-tactical-text/80">Все техники скопированы из исходного <strong>BASE.html</strong>.</p>
+                {PHASES_DEF.map(p => (
+                   <div key={p.id} className="bg-tactical-900 p-4 rounded border border-tactical-700">
                       <h3 className="text-sm font-bold text-tactical-accent flex items-center gap-2 mb-2 uppercase">{p.icon} {p.title}</h3>
-                      <p className="text-sm text-tactical-text/80">{p.info}</p>
+                      <p className="text-sm text-white font-mono mb-2">Нажмите на кнопку техники сверху, чтобы запустить автоматическое сопровождение фаз.</p>
                    </div>
                 ))}
              </div>
