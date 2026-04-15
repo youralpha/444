@@ -1,5 +1,4 @@
 use tauri::{State, Manager, AppHandle, PhysicalPosition, Emitter, WindowEvent};
-use std::thread;
 mod db;
 use db::{Db, GeneralState, NetworkContact, CustomTask, TaskHistory, TimerState, TimerTask, KptState};
 
@@ -274,10 +273,13 @@ pub fn run() {
                         if *focused {
                             let _ = overlay_c.hide();
                         } else {
-                            thread::spawn(move || {
-                                // We safely check if the position changed while app was running
+                            // Run the position check asynchronously (on Tauri's async runtime)
+                            // so it doesn't block the UI thread during the focus event and cause deadlocks.
+                            tauri::async_runtime::spawn(async move {
                                 let mut overlay_pos = String::from("bottom");
                                 if let Some(state) = app_h.try_state::<Db>() {
+                                    // Use a very short timeout or just a normal lock
+                                    // since we are off the main thread now
                                     if let Ok(conn) = state.conn.lock() {
                                         if let Ok(pos) = conn.query_row("SELECT overlay_pos FROM perimetr_state WHERE id = 1", [], |r| r.get(0)) {
                                             overlay_pos = pos;
@@ -285,25 +287,28 @@ pub fn run() {
                                     }
                                 }
 
-                                if let Ok(Some(monitor)) = overlay_c.primary_monitor() {
-                                    let size = monitor.size();
-                                    let scale_factor = monitor.scale_factor();
-                                    let overlay_width = 1000.0 * scale_factor;
-                                    let overlay_height = 50.0 * scale_factor;
+                                // To manipulate windows, we must execute back on the main thread
+                                let _ = app_h.run_on_main_thread(move || {
+                                    if let Ok(Some(monitor)) = overlay_c.primary_monitor() {
+                                        let size = monitor.size();
+                                        let scale_factor = monitor.scale_factor();
+                                        let overlay_width = 1000.0 * scale_factor;
+                                        let overlay_height = 50.0 * scale_factor;
 
-                                    let y_pos = if overlay_pos == "top" {
-                                        0.0
-                                    } else {
-                                        (size.height as f64) - overlay_height
-                                    };
+                                        let y_pos = if overlay_pos == "top" {
+                                            0.0
+                                        } else {
+                                            (size.height as f64) - overlay_height
+                                        };
 
-                                    let pos = PhysicalPosition::new(
-                                        ((size.width as f64) / 2.0 - overlay_width / 2.0) as i32,
-                                        y_pos as i32,
-                                    );
-                                    let _ = overlay_c.set_position(tauri::Position::Physical(pos));
-                                }
-                                let _ = overlay_c.show();
+                                        let pos = PhysicalPosition::new(
+                                            ((size.width as f64) / 2.0 - overlay_width / 2.0) as i32,
+                                            y_pos as i32,
+                                        );
+                                        let _ = overlay_c.set_position(tauri::Position::Physical(pos));
+                                    }
+                                    let _ = overlay_c.show();
+                                });
                             });
                         }
                     }

@@ -24,8 +24,14 @@ const PHASES_DEF = [
 export default function BaseTimer() {
   const [running, setRunning] = useState(false);
   const [activePhaseId, setActivePhaseId] = useState(PHASES_DEF[0].id);
+
+  // To avoid stale closures, we keep state logic simpler by using Refs for the tight update loop.
   const [phases, setPhases] = useState<Phase[]>(MODES.base(20 * 60000));
+  const phasesRef = useRef<Phase[]>(MODES.base(20 * 60000));
+
   const [currentPhaseIdx, setCurrentPhaseIdx] = useState(0);
+  const currentPhaseIdxRef = useRef(0);
+
   const [seconds, setSeconds] = useState(0); // overall seconds remaining
 
   const [tasks, setTasks] = useState<any[]>([]);
@@ -56,10 +62,15 @@ export default function BaseTimer() {
     else if (id === 'space') newPhases = MODES.space(3 * 60 * 1000);
     else if (id === 'base20') newPhases = MODES.base(20 * 60000);
     else if (id === 'base30') newPhases = MODES.base(30 * 60000);
+    else if (id === 'full') newPhases = MODES.full(50 * 60000);
     else newPhases = MODES[id]();
 
     setPhases(newPhases);
+    phasesRef.current = newPhases;
+
     setCurrentPhaseIdx(0);
+    currentPhaseIdxRef.current = 0;
+
     remainingPhaseRef.current = newPhases[0].duration;
 
     const totalMs = newPhases.reduce((acc, p) => acc + p.duration, 0);
@@ -73,11 +84,19 @@ export default function BaseTimer() {
 
     remainingPhaseRef.current -= delta;
 
+    const currentPhases = phasesRef.current;
+    const currentIdx = currentPhaseIdxRef.current;
+
     if (remainingPhaseRef.current <= 0) {
-      if (currentPhaseIdx < phases.length - 1) {
-         const nextIdx = currentPhaseIdx + 1;
+      if (currentIdx < currentPhases.length - 1) {
+         const nextIdx = currentIdx + 1;
+
+         // Update React state
          setCurrentPhaseIdx(nextIdx);
-         remainingPhaseRef.current = phases[nextIdx].duration;
+         // Update Mutable Ref
+         currentPhaseIdxRef.current = nextIdx;
+
+         remainingPhaseRef.current = currentPhases[nextIdx].duration;
          playAlarm(880, 0.5); // transition beep
          reqRef.current = requestAnimationFrame(updateTimer);
       } else {
@@ -90,10 +109,10 @@ export default function BaseTimer() {
       reqRef.current = requestAnimationFrame(updateTimer);
     }
 
-    // Calculate total remaining
+    // Calculate total remaining using Refs to avoid stale closures
     let totalRem = remainingPhaseRef.current;
-    for(let i = currentPhaseIdx + 1; i < phases.length; i++) {
-        totalRem += phases[i].duration;
+    for(let i = currentPhaseIdxRef.current + 1; i < currentPhases.length; i++) {
+        totalRem += currentPhases[i].duration;
     }
     setSeconds(Math.ceil(totalRem / 1000));
   };
@@ -106,7 +125,7 @@ export default function BaseTimer() {
   const stopTimer = () => {
     if (reqRef.current) cancelAnimationFrame(reqRef.current);
     reqRef.current = null;
-    lastTimeRef.current = null;
+    lastTimeRef.current = null; // Important: reset last time so next start calculates delta from 0
   };
 
   const playAlarm = (freq: number, dur: number) => {
