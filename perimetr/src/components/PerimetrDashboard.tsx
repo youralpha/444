@@ -33,7 +33,6 @@ export default function PerimetrDashboard() {
     setCustomTasks(res);
   };
 
-  // We reuse the KPT calendar command to show activity on the dashboard
   const fetchCalendar = async () => {
     const cd: string[] = await invoke('get_kpt_calendar');
     setCalendarDates(cd);
@@ -79,7 +78,6 @@ export default function PerimetrDashboard() {
 
   const cycles = getCycles(customTasks);
 
-  // Generate 35 days for calendar
   const today = new Date();
   const calDays = Array.from({ length: 35 }).map((_, i) => {
     const d = subDays(today, 34 - i);
@@ -227,7 +225,7 @@ export default function PerimetrDashboard() {
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 fade-in" />
           <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-3rem)] max-w-2xl bg-tactical-800 border border-tactical-700 rounded-sm shadow-2xl z-50 flex flex-col max-h-[calc(100vh-3rem)] fade-in outline-none p-0 overflow-hidden">
-            {selectedTask && <TaskModalInner task={selectedTask} onToggle={fetchCalendar} onClose={() => { setSelectedTask(null); fetchCustomTasks(); }} />}
+            {selectedTask && <TaskModalInner task={selectedTask} onToggle={fetchCalendar} state={state} handleStateChange={handleStateChange} onClose={() => { setSelectedTask(null); fetchCustomTasks(); }} />}
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
@@ -310,7 +308,7 @@ function TaskItem({ task, onClick, onToggle }: { task: ProtocolTask, onClick: ()
   );
 }
 
-function TaskModalInner({ task, onClose, onToggle }: { task: ProtocolTask, onClose: () => void, onToggle: () => void }) {
+function TaskModalInner({ task, onClose, onToggle, state, handleStateChange }: { task: ProtocolTask, onClose: () => void, onToggle: () => void, state: any, handleStateChange: any }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [done, setDone] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -330,6 +328,11 @@ function TaskModalInner({ task, onClose, onToggle }: { task: ProtocolTask, onClo
     const na = { ...answers, [id]: val };
     setAnswers(na);
     await invoke('save_task_history', { taskId: task.id, date: dateKey, completed: done, fieldData: JSON.stringify(na) });
+
+    // For 'sas_bullets', automatically update main bullets state
+    if (id === 'sas_bullets') {
+        handleStateChange('bullets', val);
+    }
   };
 
   const toggleDone = async () => {
@@ -418,16 +421,22 @@ function TaskModalInner({ task, onClose, onToggle }: { task: ProtocolTask, onClo
           {task.description}
         </div>
         <div className="flex flex-col gap-5">
-          {task.fields.map((f: any) => (
-            <div key={f.id} className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-tactical-text/50">{f.label}</label>
-              {f.type_ === 'textarea' ? (
-                <textarea rows={3} value={answers[f.id] || ''} onChange={e => updateField(f.id, e.target.value)} placeholder={f.placeholder || ''} className="w-full bg-tactical-800 border border-tactical-700 rounded p-3 text-sm focus:border-tactical-accent outline-none custom-scrollbar" />
-              ) : (
-                <input type={f.type_} value={answers[f.id] || ''} onChange={e => updateField(f.id, e.target.value)} placeholder={f.placeholder || ''} className="w-full bg-tactical-800 border border-tactical-700 rounded p-3 text-sm focus:border-tactical-accent outline-none" />
-              )}
-            </div>
-          ))}
+          {task.fields.map((f: any) => {
+            // Check if this field should be overridden by general state
+            let val = answers[f.id] || '';
+            if (f.id === 'sas_bullets') val = state.bullets;
+
+            return (
+              <div key={f.id} className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-tactical-text/50">{f.label}</label>
+                {f.type_ === 'textarea' ? (
+                  <textarea rows={3} value={val} onChange={e => updateField(f.id, e.target.value)} placeholder={f.placeholder || ''} className="w-full bg-tactical-800 border border-tactical-700 rounded p-3 text-sm focus:border-tactical-accent outline-none custom-scrollbar" />
+                ) : (
+                  <input type={f.type_} value={val} onChange={e => updateField(f.id, e.target.value)} placeholder={f.placeholder || ''} className="w-full bg-tactical-800 border border-tactical-700 rounded p-3 text-sm focus:border-tactical-accent outline-none" />
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
       <div className="p-6 border-t border-tactical-700 bg-tactical-800 flex justify-between items-center">
