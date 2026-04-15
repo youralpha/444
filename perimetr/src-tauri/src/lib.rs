@@ -238,50 +238,21 @@ pub fn run() {
                 .build()?;
 
             let overlay_clone = overlay_window.clone();
-            let app_handle = app.handle().clone();
 
             if let Some(main_window) = app.get_webview_window("main") {
+                // Remove the database block from the focus handler to prevent deadlocks.
+                // It is unsafe to query the SQLite DB directly inside the UI event loop,
+                // as it can block the UI or conflict with background IPC queries.
+                // For position, we'll query the frontend, or use a default that gets updated on IPC save.
                 main_window.on_window_event(move |event| match event {
                     WindowEvent::Focused(focused) => {
-                        // Do not use database lock here to prevent deadlock with other IPC calls.
-                        // Instead, we spawn a brief thread or just fire a lightweight event.
                         let overlay_c = overlay_clone.clone();
-                        let app_h = app_handle.clone();
                         if *focused {
                             let _ = overlay_c.hide();
                         } else {
-                            thread::spawn(move || {
-                                // Retrieve overlay_pos gracefully
-                                let mut overlay_pos = String::from("bottom");
-                                if let Some(state) = app_h.try_state::<Db>() {
-                                    if let Ok(conn) = state.conn.lock() {
-                                        if let Ok(pos) = conn.query_row("SELECT overlay_pos FROM perimetr_state WHERE id = 1", [], |r| r.get(0)) {
-                                            overlay_pos = pos;
-                                        }
-                                    }
-                                }
-
-                                // Now we show and reposition
-                                let _ = overlay_c.show();
-                                if let Ok(Some(monitor)) = overlay_c.primary_monitor() {
-                                    let size = monitor.size();
-                                    let scale_factor = monitor.scale_factor();
-                                    let overlay_width = 1000.0 * scale_factor;
-                                    let overlay_height = 50.0 * scale_factor;
-
-                                    let y_pos = if overlay_pos == "top" {
-                                        0.0
-                                    } else {
-                                        (size.height as f64) - overlay_height
-                                    };
-
-                                    let pos = PhysicalPosition::new(
-                                        ((size.width as f64) / 2.0 - overlay_width / 2.0) as i32,
-                                        y_pos as i32,
-                                    );
-                                    let _ = overlay_c.set_position(tauri::Position::Physical(pos));
-                                }
-                            });
+                            // By default show at bottom, but let the frontend handle precise CSS logic or state.
+                            // However, we just show it. We do NOT run `state.conn.lock()` here.
+                            let _ = overlay_c.show();
                         }
                     }
                     _ => {}

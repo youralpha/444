@@ -3,12 +3,15 @@ import { invoke } from '@tauri-apps/api/core';
 import * as Tabs from '@radix-ui/react-tabs';
 import * as Dialog from '@radix-ui/react-dialog';
 import { getCycles, ProtocolTask } from '../lib/perimetrTasks';
-import { X, CheckSquare, Settings2, Trash2 } from 'lucide-react';
+import { X, CheckSquare, Settings2, Trash2, CalendarDays } from 'lucide-react';
+import { format, subDays } from 'date-fns';
+import { ru } from 'date-fns/locale';
 
 export default function PerimetrDashboard() {
   const [state, setState] = useState({ score: 0, mission: '', bullets: '', phase0: '', phase1: '', overlay_position: 'bottom' });
   const [contacts, setContacts] = useState<any[]>([]);
   const [customTasks, setCustomTasks] = useState<any[]>([]);
+  const [calendarDates, setCalendarDates] = useState<string[]>([]);
 
   const [selectedTask, setSelectedTask] = useState<ProtocolTask | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<any | null>(null);
@@ -30,10 +33,17 @@ export default function PerimetrDashboard() {
     setCustomTasks(res);
   };
 
+  // We reuse the KPT calendar command to show activity on the dashboard
+  const fetchCalendar = async () => {
+    const cd: string[] = await invoke('get_kpt_calendar');
+    setCalendarDates(cd);
+  };
+
   useEffect(() => {
     fetchGeneral();
     fetchContacts();
     fetchCustomTasks();
+    fetchCalendar();
   }, []);
 
   const handleStateChange = async (key: string, val: any) => {
@@ -69,6 +79,13 @@ export default function PerimetrDashboard() {
 
   const cycles = getCycles(customTasks);
 
+  // Generate 35 days for calendar
+  const today = new Date();
+  const calDays = Array.from({ length: 35 }).map((_, i) => {
+    const d = subDays(today, 34 - i);
+    return format(d, 'yyyy-MM-dd');
+  });
+
   return (
     <div className="flex flex-col h-full fade-in">
       <div className="flex justify-between items-start mb-8">
@@ -80,19 +97,19 @@ export default function PerimetrDashboard() {
           <span className="font-mono text-tactical-text/60 text-sm">АГЕНТ 4444:</span>
           <span className="font-mono text-xl font-bold text-tactical-accent">{state.score}</span>
           <div className="flex flex-col border-l border-tactical-700 pl-3 ml-2">
-            <button onClick={() => handleStateChange('score', state.score + 10)} className="text-[10px] text-tactical-accent hover:text-white uppercase font-bold leading-none mb-1">▲ WIN</button>
-            <button onClick={() => handleStateChange('score', state.score - 10)} className="text-[10px] text-tactical-alert hover:text-white uppercase font-bold leading-none">▼ FAIL</button>
+            <button onClick={() => handleStateChange('score', state.score + 10)} className="text-[10px] text-tactical-accent hover:text-white uppercase font-bold leading-none mb-1 outline-none">▲ WIN</button>
+            <button onClick={() => handleStateChange('score', state.score - 10)} className="text-[10px] text-tactical-alert hover:text-white uppercase font-bold leading-none outline-none">▼ FAIL</button>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 mb-8">
-        <div className="cyber-border flex flex-col gap-2">
+      <div className="grid grid-cols-3 gap-6 mb-8">
+        <div className="cyber-border flex flex-col gap-2 col-span-1">
           <label className="text-xs font-bold text-tactical-accent uppercase">Генеральная Цель (Миссия)</label>
-          <textarea className="w-full bg-tactical-900 border border-tactical-700 rounded p-3 text-sm focus:border-tactical-accent outline-none custom-scrollbar resize-none" rows={4}
+          <textarea className="w-full bg-tactical-900 border border-tactical-700 rounded p-3 text-sm focus:border-tactical-accent outline-none custom-scrollbar resize-none h-full"
             value={state.mission} onChange={e => handleStateChange('mission', e.target.value)} placeholder="КТО:\nЧТО:\nКОГДА:\nЗАЧЕМ:" />
         </div>
-        <div className="cyber-border flex flex-col gap-2 relative">
+        <div className="cyber-border flex flex-col gap-2 col-span-1 relative">
           <div className="flex justify-between items-center">
             <label className="text-xs font-bold text-orange-400 uppercase">Три Пули (Фокус дня)</label>
             <div className="flex items-center gap-2">
@@ -103,8 +120,26 @@ export default function PerimetrDashboard() {
               </select>
             </div>
           </div>
-          <textarea className="w-full bg-tactical-900 border border-orange-500/30 rounded p-3 text-sm focus:border-orange-500 outline-none custom-scrollbar resize-none flex-1 mt-1"
+          <textarea className="w-full bg-tactical-900 border border-orange-500/30 rounded p-3 text-sm focus:border-orange-500 outline-none custom-scrollbar resize-none h-full mt-1"
             value={state.bullets} onChange={e => handleStateChange('bullets', e.target.value)} placeholder="1.\n2.\n3." />
+        </div>
+
+        <div className="cyber-border flex flex-col gap-2 col-span-1 border-emerald-500/50">
+          <div className="flex justify-between items-center">
+             <label className="text-xs font-bold text-emerald-400 uppercase flex items-center gap-2"><CalendarDays size={14}/> Оперативный Календарь</label>
+             <span className="text-[10px] text-tactical-text/50 uppercase">{format(today, 'LLLL yyyy', { locale: ru })}</span>
+          </div>
+          <div className="calendar-grid mt-2">
+            {calDays.map(dStr => {
+              const active = calendarDates.includes(dStr);
+              const dObj = new Date(dStr);
+              return (
+                <div key={dStr} className={`cal-day ${active ? 'active' : ''}`} title={dStr}>
+                  {format(dObj, 'd')}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -124,7 +159,7 @@ export default function PerimetrDashboard() {
                 <h2 className={`${cycle.color} text-sm font-bold uppercase border-b border-tactical-700 pb-3 mb-4`}>{cycle.title}</h2>
                 <div className="flex-1 flex flex-col gap-2">
                   {cycle.tasks.map((task: any) => (
-                    <TaskItem key={task.id} task={task} onClick={() => setSelectedTask(task)} />
+                    <TaskItem key={task.id} task={task} onClick={() => setSelectedTask(task)} onToggle={fetchCalendar} />
                   ))}
                 </div>
                 <button onClick={() => setCreatingTaskCycle(cycle.id)} className="w-full mt-4 py-2 border border-dashed border-tactical-700 text-tactical-text/50 hover:text-tactical-accent hover:border-tactical-accent rounded-sm text-xs font-bold uppercase transition-colors outline-none">
@@ -192,7 +227,7 @@ export default function PerimetrDashboard() {
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 fade-in" />
           <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-3rem)] max-w-2xl bg-tactical-800 border border-tactical-700 rounded-sm shadow-2xl z-50 flex flex-col max-h-[calc(100vh-3rem)] fade-in outline-none p-0 overflow-hidden">
-            {selectedTask && <TaskModalInner task={selectedTask} onClose={() => { setSelectedTask(null); fetchCustomTasks(); }} />}
+            {selectedTask && <TaskModalInner task={selectedTask} onToggle={fetchCalendar} onClose={() => { setSelectedTask(null); fetchCustomTasks(); }} />}
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
@@ -241,7 +276,7 @@ export default function PerimetrDashboard() {
 
 // Internal Components
 
-function TaskItem({ task, onClick }: { task: ProtocolTask, onClick: () => void }) {
+function TaskItem({ task, onClick, onToggle }: { task: ProtocolTask, onClick: () => void, onToggle: () => void }) {
   const [done, setDone] = useState(false);
   const dateKey = new Date().toISOString().split('T')[0];
 
@@ -255,6 +290,11 @@ function TaskItem({ task, onClick }: { task: ProtocolTask, onClick: () => void }
     setDone(d);
     const res: any = await invoke('get_task_history', { taskId: task.id, date: dateKey });
     await invoke('save_task_history', { taskId: task.id, date: dateKey, completed: d, fieldData: res.field_data });
+    // Record calendar activity if done
+    if (d) {
+       await invoke('save_kpt_task', { taskId: `cal_${task.id}`, completed: true, date: dateKey });
+       onToggle();
+    }
   };
 
   return (
@@ -270,7 +310,7 @@ function TaskItem({ task, onClick }: { task: ProtocolTask, onClick: () => void }
   );
 }
 
-function TaskModalInner({ task, onClose }: { task: ProtocolTask, onClose: () => void }) {
+function TaskModalInner({ task, onClose, onToggle }: { task: ProtocolTask, onClose: () => void, onToggle: () => void }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [done, setDone] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -296,6 +336,10 @@ function TaskModalInner({ task, onClose }: { task: ProtocolTask, onClose: () => 
     const d = !done;
     setDone(d);
     await invoke('save_task_history', { taskId: task.id, date: dateKey, completed: d, fieldData: JSON.stringify(answers) });
+    if (d) {
+       await invoke('save_kpt_task', { taskId: `cal_${task.id}`, completed: true, date: dateKey });
+       onToggle();
+    }
   };
 
   const saveEdit = async () => {
