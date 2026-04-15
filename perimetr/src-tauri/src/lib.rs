@@ -1,4 +1,5 @@
 use tauri::{State, Manager, AppHandle, PhysicalPosition, Emitter, WindowEvent};
+use std::thread;
 mod db;
 use db::{Db, GeneralState, NetworkContact, CustomTask, TaskHistory, TimerState, TimerTask, KptState};
 
@@ -71,7 +72,7 @@ fn save_contact(state: State<'_, Db>, contact: NetworkContact) -> Result<(), Str
 #[tauri::command]
 fn delete_contact(state: State<'_, Db>, id: String) -> Result<(), String> {
     let conn = state.conn.lock().unwrap();
-    conn.execute("DELETE FROM perimetr_network WHERE id = ?", [id]).map_err(|e| e.to_string())?;
+    conn.execute("DELETE FROM perimetr_network WHERE id = ?", [id.clone()]).map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -99,9 +100,26 @@ fn save_custom_task(state: State<'_, Db>, task: CustomTask) -> Result<(), String
 #[tauri::command]
 fn delete_custom_task(state: State<'_, Db>, id: String) -> Result<(), String> {
     let conn = state.conn.lock().unwrap();
-    conn.execute("DELETE FROM perimetr_custom_tasks WHERE id = ?", [id]).map_err(|e| e.to_string())?;
+    conn.execute("DELETE FROM perimetr_custom_tasks WHERE id = ?", [id.clone()]).map_err(|e| e.to_string())?;
+    // We also consider that "deleted default tasks" might just be saved to a separate table.
+    // Or we just insert them as "deleted" into a generic deleted_tasks list.
+    // We will just create a basic table for deleted tasks on the fly if needed.
+    let _ = conn.execute("CREATE TABLE IF NOT EXISTS perimetr_deleted_tasks (id TEXT PRIMARY KEY)", []);
+    let _ = conn.execute("INSERT OR IGNORE INTO perimetr_deleted_tasks (id) VALUES (?)", [id.clone()]);
     Ok(())
 }
+
+#[tauri::command]
+fn get_deleted_tasks(state: State<'_, Db>) -> Result<Vec<String>, String> {
+    let conn = state.conn.lock().unwrap();
+    let _ = conn.execute("CREATE TABLE IF NOT EXISTS perimetr_deleted_tasks (id TEXT PRIMARY KEY)", []);
+    let mut stmt = conn.prepare("SELECT id FROM perimetr_deleted_tasks").map_err(|e| e.to_string())?;
+    let it = stmt.query_map([], |r| Ok(r.get(0)?)).map_err(|e| e.to_string())?;
+    let mut res = Vec::new();
+    for i in it { if let Ok(c) = i { res.push(c); } }
+    Ok(res)
+}
+
 
 #[tauri::command]
 fn get_task_history(state: State<'_, Db>, task_id: String, date: String) -> Result<TaskHistory, String> {
@@ -278,8 +296,6 @@ pub fn run() {
                             tauri::async_runtime::spawn(async move {
                                 let mut overlay_pos = String::from("bottom");
                                 if let Some(state) = app_h.try_state::<Db>() {
-                                    // Use a very short timeout or just a normal lock
-                                    // since we are off the main thread now
                                     if let Ok(conn) = state.conn.lock() {
                                         if let Ok(pos) = conn.query_row("SELECT overlay_pos FROM perimetr_state WHERE id = 1", [], |r| r.get(0)) {
                                             overlay_pos = pos;
@@ -321,7 +337,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_general_state, save_general_state,
             get_contacts, save_contact, delete_contact,
-            get_custom_tasks, save_custom_task, delete_custom_task,
+            get_custom_tasks, save_custom_task, delete_custom_task, get_deleted_tasks,
             get_task_history, save_task_history,
             get_timer_state, save_timer_state, get_timer_tasks, add_timer_task,
             get_kpt_state, save_kpt_state, get_kpt_task, save_kpt_task,

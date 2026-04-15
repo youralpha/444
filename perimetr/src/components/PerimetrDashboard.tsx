@@ -11,6 +11,7 @@ export default function PerimetrDashboard() {
   const [state, setState] = useState({ score: 0, mission: '', bullets: '', phase0: '', phase1: '', overlay_position: 'bottom' });
   const [contacts, setContacts] = useState<any[]>([]);
   const [customTasks, setCustomTasks] = useState<any[]>([]);
+  const [deletedTasks, setDeletedTasks] = useState<string[]>([]);
   const [calendarDates, setCalendarDates] = useState<string[]>([]);
 
   const [selectedTask, setSelectedTask] = useState<ProtocolTask | null>(null);
@@ -31,6 +32,8 @@ export default function PerimetrDashboard() {
   const fetchCustomTasks = async () => {
     const res: any = await invoke('get_custom_tasks');
     setCustomTasks(res);
+    const delRes: string[] = await invoke('get_deleted_tasks');
+    setDeletedTasks(delRes);
   };
 
   const fetchCalendar = async () => {
@@ -76,7 +79,7 @@ export default function PerimetrDashboard() {
     fetchCustomTasks();
   };
 
-  const cycles = getCycles(customTasks);
+  const cycles = getCycles(customTasks, deletedTasks);
 
   const today = new Date();
   const calDays = Array.from({ length: 35 }).map((_, i) => {
