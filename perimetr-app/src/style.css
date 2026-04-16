@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-tactical-900 text-tactical-text min-h-screen font-sans;
+  margin: 0;
+  overflow: hidden; /* Hide scrollbar on shell, let iframes scroll */
+}
