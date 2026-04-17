@@ -3,7 +3,7 @@ export default {
   darkMode: 'class',
   content: [
     "./index.html",
-    "./src/**/*.{js,ts}",
+    "./src/**/*.{js,ts,svelte}",
     "./public/**/*.html",
   ],
   theme: {

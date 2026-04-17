@@ -1,12 +1,9 @@
+import { mount } from 'svelte';
 import './style.css';
-import Alpine from 'alpinejs';
+import App from './App.svelte';
 
-declare global {
-  interface Window {
-    Alpine: typeof Alpine;
-  }
-}
+const app = mount(App, {
+  target: document.getElementById('app')!,
+});
 
-window.Alpine = Alpine;
-
-Alpine.start();
+export default app;
