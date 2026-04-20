@@ -105,19 +105,20 @@ async function saveCbtData(type, data) {
     }
 }
 
-async function deleteCbtData(id) {
-    if(!confirm('Удалить запись?')) return;
-    try {
-        setSyncStatus(true);
-        await api.delete(`/cbt/${id}`);
-        state.cbt = await api.get('/cbt');
-        renderCBT();
-        showToast('Удалено');
-    } catch (e) {
-        showToast('Ошибка удаления', true);
-    } finally {
-        setSyncStatus(false);
-    }
+function deleteCbtData(id) {
+    showConfirmModal('Удаление', 'Удалить запись?', async () => {
+        try {
+            setSyncStatus(true);
+            await api.delete(`/cbt/${id}`);
+            state.cbt = await api.get('/cbt');
+            renderCBT();
+            showToast('Удалено');
+        } catch (e) {
+            showToast('Ошибка удаления', true);
+        } finally {
+            setSyncStatus(false);
+        }
+    });
 }
 
 function renderCBT() {
@@ -228,7 +229,7 @@ function renderAbcCard(item) {
     return `
     <div class="bg-slate-800 p-3 rounded border border-slate-700 relative">
         <div class="text-xs text-slate-500 mb-1">${item.date}</div>
-        <div class="text-sm mb-1"><span class="text-slate-400">A (Ситуация):</span> ${item.situation}</div>
+        <div class="text-sm mb-1"><span class="text-slate-400">A (Ситуация):</span> ${escapeHtml(item.situation)}</div>
         <div class="text-sm mb-1"><span class="text-purple-400 font-bold">B (Мысль):</span> ${item.thought}</div>
         <div class="text-sm mb-2"><span class="text-slate-400">C (Эмоция):</span> ${item.emotion} (${item.emotionIntensity}%)</div>
         ${distortions ? `<div class="mt-2">${distortions}</div>` : ''}
@@ -255,7 +256,7 @@ function renderExposureCard(item) {
     return `
     <div class="bg-slate-800 p-3 rounded border ${item.completed ? 'border-emerald-500/50' : 'border-slate-700'} relative">
         <div class="flex justify-between items-center mb-2 pr-6">
-            <div class="font-bold text-slate-200">${item.situation}</div>
+            <div class="font-bold text-slate-200">${escapeHtml(item.situation)}</div>
             <div class="text-sm font-bold text-orange-400">SUDs: ${item.suds}</div>
         </div>
         <div class="text-sm mb-1"><span class="text-slate-400">Ожидание:</span> ${item.expectation}</div>

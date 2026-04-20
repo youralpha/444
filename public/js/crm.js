@@ -138,19 +138,19 @@ function openContactModal(contact = null) {
     });
 }
 
-async function deleteContact(id) {
-    if(!confirm('Удалить контакт?')) return;
-
-    try {
-        setSyncStatus(true);
-        await api.delete(`/network/${id}`);
-        state.network = await api.get('/network');
-        renderCRM();
-        closeModal();
-        showToast('Контакт удален');
-    } catch (e) {
-        showToast('Ошибка удаления', true);
-    } finally {
-        setSyncStatus(false);
-    }
+function deleteContact(id) {
+    showConfirmModal('Удаление', 'Удалить контакт?', async () => {
+        try {
+            setSyncStatus(true);
+            await api.delete('/network/' + id);
+            state.network = await api.get('/network');
+            renderCRM();
+            closeModal();
+            showToast('Контакт удален');
+        } catch (e) {
+            showToast('Ошибка удаления', true);
+        } finally {
+            setSyncStatus(false);
+        }
+    });
 }

@@ -158,7 +158,7 @@ function startSession(mode, duration) {
 
     if (currentPhases.length > 0) {
         currentPhaseIndex = 0;
-        updateTimerDisplay();
+
         toggleTimer();
     }
 }

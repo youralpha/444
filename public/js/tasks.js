@@ -68,18 +68,19 @@ function openTaskDetailsModal(task) {
     openModal(html);
 }
 
-async function deleteTask(id) {
-    if(!confirm('Точно удалить задачу?')) return;
-    try {
-        setSyncStatus(true);
-        await api.delete(`/tasks/${id}`);
-        state.cycles = await api.get('/cycles');
-        renderDashboard();
-        closeModal();
-        showToast('Задача удалена');
-    } catch (e) {
-        showToast('Ошибка удаления', true);
-    } finally {
-        setSyncStatus(false);
-    }
+function deleteTask(id) {
+    showConfirmModal('Удаление', 'Точно удалить задачу?', async () => {
+        try {
+            setSyncStatus(true);
+            await api.delete('/tasks/' + id);
+            state.cycles = await api.get('/cycles');
+            renderDashboard();
+            closeModal();
+            showToast('Задача удалена');
+        } catch (e) {
+            showToast('Ошибка удаления', true);
+        } finally {
+            setSyncStatus(false);
+        }
+    });
 }

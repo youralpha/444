@@ -1,3 +1,13 @@
+function escapeHtml(unsafe) {
+    if(!unsafe) return '';
+    return unsafe.toString()
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
+
 // API Service
 const API_URL = '/api/v1';
 
@@ -157,17 +167,26 @@ function renderCalendar(year, month) {
         const markerContainer = document.createElement('div');
         markerContainer.className = 'flex gap-0.5 mt-1 h-1';
 
-        // Timer stats marker (Blue)
-        if (state.timerStats && state.timerStats.some(s => s.date === cellDateStr && s.completed)) {
-            const mBlue = document.createElement('div');
-            mBlue.className = 'w-1 h-1 rounded-full bg-blue-500';
-            markerContainer.appendChild(mBlue);
+        // CBT stats marker (Purple)
+        // Convert YYYY-MM-DD to DD.MM.YYYY to match CBT date format
+        const cbtDateStr = cellDateStr.split('-').reverse().join('.');
+        const hasCBT = state.cbt && (
+            (state.cbt.mood && state.cbt.mood.some(m => m.date && m.date.includes(cbtDateStr))) ||
+            (state.cbt.abc && state.cbt.abc.some(a => a.date && a.date.includes(cbtDateStr)))
+        );
+        if (hasCBT) {
+            const m = document.createElement('div');
+            m.className = 'w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_5px_rgba(168,85,247,0.8)]';
+            markerContainer.appendChild(m);
         }
 
-        // CBT stats marker (Purple) - simplified logic for demo, assumes if tracker data exists for this day
-        if (state.cbt && state.cbt.tracker && state.cbt.tracker.length > 0) {
-           // We would need to map day 1-7 to actual dates or check if any cbt logs exist for this date
-           // For now, let's just show it if there's any CBT activity logged on this date
+        // Timer stats marker (Blue)
+        const timerData = state.timerStats || [];
+        const hasTimer = timerData.some(t => t.date === cellDateStr && t.completed);
+        if (hasTimer) {
+            const m = document.createElement('div');
+            m.className = 'w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.8)]';
+            markerContainer.appendChild(m);
         }
 
         cell.appendChild(markerContainer);
@@ -342,8 +361,8 @@ function renderCRM() {
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
-                            <div class="font-bold text-slate-200">${contact.name} ${contact.callsign ? `"${contact.callsign}"` : ''}</div>
-                            <div class="text-xs text-slate-400 mt-1">${contact.role || 'Нет роли'}</div>
+                            <div class="font-bold text-slate-200">${escapeHtml(contact.name)} ${contact.callsign ? `"${escapeHtml(contact.callsign)}"` : ''}</div>
+                            <div class="text-xs text-slate-400 mt-1">${escapeHtml(contact.role || 'Нет роли')}</div>
                         </div>
                         ${isOverdue ? '<span class="text-red-500 text-xs">⚠️</span>' : ''}
                     </div>
@@ -464,16 +483,68 @@ function init() {
         reader.readAsText(file);
     });
 
-    document.getElementById('btn-reset-db').addEventListener('click', async () => {
-        if(confirm("Вы уверены, что хотите сбросить боевой ритм? Все кастомные задачи будут удалены!")) {
+    document.getElementById('btn-reset-db').addEventListener('click', () => {
+        showConfirmModal('Сброс', 'Вы уверены, что хотите сбросить боевой ритм? Все кастомные задачи будут удалены!', async () => {
             try {
                 await api.post('/reset-cycles', {});
                 location.reload();
             } catch(e) {
                 showToast('Ошибка сброса', true);
             }
-        }
+        });
     });
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+function showConfirmModal(title, message, onConfirm) {
+    const html = `
+        <h3 class="text-xl text-emerald-400 mb-2">${title}</h3>
+        <p class="text-sm text-slate-300 mb-6">${message}</p>
+        <div class="flex justify-end space-x-2">
+            <button type="button" id="btn-confirm-cancel" class="text-slate-400 hover:text-white px-3 py-1">Отмена</button>
+            <button type="button" id="btn-confirm-ok" class="bg-red-600 hover:bg-red-500 text-white px-4 py-1 rounded">Подтвердить</button>
+        </div>
+    `;
+    openModal(html);
+
+    document.getElementById('btn-confirm-cancel').addEventListener('click', closeModal);
+    document.getElementById('btn-confirm-ok').addEventListener('click', () => {
+        closeModal();
+        onConfirm();
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const moodSlider = document.getElementById('sidebar-mood-slider');
+    const moodValue = document.getElementById('sidebar-mood-value');
+
+    if (moodSlider && moodValue) {
+        moodSlider.addEventListener('input', (e) => {
+            moodValue.textContent = e.target.value;
+        });
+
+        moodSlider.addEventListener('change', async (e) => {
+            const val = e.target.value;
+            const data = {
+                id: 'mood_' + Date.now(),
+                date: new Date().toLocaleString('ru-RU'),
+                activity: 'Шкала (Сайдбар)',
+                moodBefore: val,
+                moodAfter: val,
+                notes: ''
+            };
+            try {
+                setSyncStatus(true);
+                await api.post('/cbt', { id: data.id, type: 'mood', data });
+                state.cbt = await api.get('/cbt');
+                if (typeof renderCBT === 'function') renderCBT();
+                showToast('Настроение сохранено');
+            } catch (err) {
+                showToast('Ошибка сохранения', true);
+            } finally {
+                setSyncStatus(false);
+            }
+        });
+    }
+});
