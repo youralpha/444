@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@theme {
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+  --color-red-500: #ef4444;
+  --color-blue-500: #3b82f6;
+  --color-purple-500: #8b5cf6;
+}
+
+body {
+    background-color: var(--color-slate-900);
+    color: #e2e8f0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.tab-content {
+    display: none;
+}
+.tab-content.active {
+    display: block;
+}
+
+.cbt-distortion-chip {
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    background-color: var(--color-slate-800);
+    border: 1px solid #475569;
+    cursor: pointer;
+    user-select: none;
+}
+
+.cbt-distortion-chip.selected {
+    background-color: var(--color-blue-500);
+    color: white;
+    border-color: var(--color-blue-500);
+}
+
+.military-input {
+    width: 100%;
+    background-color: var(--color-slate-800);
+    border: 1px solid #475569;
+    color: white;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    outline: none;
+}
+
+.military-input:focus {
+    border-color: var(--color-emerald-500);
+    box-shadow: 0 0 0 1px var(--color-emerald-500);
+}
+
+/* Custom Scrollbar for inner areas */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* SVG Timer Ring specific */
+#timer-ring {
+    transition: stroke-dashoffset 0.1s linear; /* Smooth fallback, but primarily JS driven */
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+}
