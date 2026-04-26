@@ -49,7 +49,7 @@
             stroke: #38bdf8; /* sky-400 */
             stroke-width: 12;
             stroke-linecap: round;
-            transition: stroke-dashoffset 0.05s linear, stroke 0.3s ease; 
+            transition: stroke-dashoffset 0.05s linear, stroke 0.3s ease;
         }
 
         .time-display {
@@ -96,7 +96,7 @@
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
         .tab-btn {
-            font-size: 0.875rem; 
+            font-size: 0.875rem;
             padding: 0.5rem 0.25rem;
             flex: 1;
             font-weight: 600;
@@ -105,7 +105,7 @@
             line-height: 1.2;
             text-align: center;
         }
-        
+
         .subtab-btn {
             font-size: 0.75rem;
             padding: 0.4rem 0.6rem;
@@ -114,7 +114,7 @@
             transition: all 0.2s;
             white-space: nowrap;
         }
-        
+
         audio::-webkit-media-controls-panel {
             background-color: #1e293b;
             color: white;
@@ -126,7 +126,7 @@
     <!-- Модальное окно с информацией -->
     <div id="info-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4 opacity-0 transition-opacity duration-300">
         <div class="bg-slate-800 p-6 sm:p-8 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl relative border border-slate-700 transform scale-95 transition-transform duration-300" id="modal-content">
-            
+
             <button id="btn-close-modal" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors bg-slate-700 hover:bg-slate-600 rounded-full p-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -134,9 +134,9 @@
             </button>
 
             <h2 class="text-xl sm:text-2xl font-bold text-white mb-6 pr-8">Стрессоустойчивость по методикам спецслужб 2.0</h2>
-            
+
             <div class="text-slate-300 text-sm sm:text-base space-y-8">
-                
+
                 <div>
                     <h3 class="text-xl font-bold text-white mb-4 border-b border-slate-600 pb-2">I. Базовая подготовка (20 / 40 мин)</h3>
                     <p class="mb-3">Последовательная работа с вегетативной нервной системой:</p>
@@ -170,7 +170,7 @@
 
     <!-- Основной интерфейс таймера -->
     <div class="flex flex-col items-center bg-slate-800 p-5 sm:p-8 rounded-3xl shadow-2xl max-w-[28rem] w-full mx-4 border border-slate-700">
-        
+
         <!-- Главные вкладки (Режимы) -->
         <div class="flex justify-between gap-2 mb-4 bg-slate-900 p-1.5 rounded-xl w-full">
             <button id="tab-main-base" class="tab-btn bg-slate-900 text-slate-400 hover:text-white transition-all">База</button>
@@ -194,17 +194,17 @@
         <div class="text-center mb-6 w-full mt-2">
             <h1 class="text-xl sm:text-2xl font-bold text-white transition-all" id="mode-title">Загрузка...</h1>
             <p class="text-sm text-slate-400 mt-1 transition-all min-h-[1.25rem]" id="mode-subtitle">Инициализация</p>
-            
+
             <!-- Селектор длительности сессии -->
             <div id="duration-container" class="mt-4 border-t border-slate-700 pt-4">
                 <div class="flex justify-center gap-2 flex-wrap" id="duration-buttons">
                     <!-- База -->
                     <button class="duration-btn bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors hidden" data-mode="base" data-duration="20">20 минут</button>
                     <button class="duration-btn bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors hidden" data-mode="base" data-duration="40">40 минут</button>
-                    
+
                     <!-- Арсенал -->
                     <button class="duration-btn bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors hidden" data-mode="arsenal" data-duration="30">30 минут</button>
-                    
+
                     <!-- Максимум -->
                     <button class="duration-btn bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors hidden" data-mode="full" data-duration="50">50 минут</button>
                     <button class="duration-btn bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors hidden" data-mode="full" data-duration="70">70 минут</button>
@@ -220,7 +220,7 @@
             </svg>
             <div class="phase-text uppercase" id="phase-text">Ожидание</div>
             <div class="time-display" id="time-text">0:00</div>
-            
+
             <div id="session-time-left" class="text-sm text-sky-300 mt-2 font-medium hidden">Осталось: 20:00</div>
         </div>
 
@@ -256,7 +256,7 @@
                 Стоп
             </button>
         </div>
-        
+
         <div class="flex justify-between w-full mt-4 items-center px-1">
             <button id="btn-reset" class="text-slate-400 hover:text-white transition-colors text-sm font-medium py-2 px-2 rounded-lg active:scale-95 flex items-center gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -264,7 +264,7 @@
                 </svg>
                 Сброс
             </button>
-            
+
             <button id="btn-info" class="text-slate-400 hover:text-sky-400 transition-colors text-sm font-medium py-2 px-2 rounded-lg active:scale-95 flex items-center gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -358,8 +358,8 @@
                 // 1. Физиологический вздох
                 p.push({ id: 'base-intro-1', name: 'ПОДГОТОВКА', duration: 10000, startFill: 0, endFill: 1, color: '#eab308', globalTitle: "Этап 1/4: Физиологический вздох", title: "Приготовьтесь", desc: "Сядьте удобно. Начинаем этап сброса стресса. Подготовьтесь к двойному вдоху носом." });
                 accumulatedMs += 10000;
-                
-                let sighCycles = Math.floor((sighTargetMs - 10000) / 16000); 
+
+                let sighCycles = Math.floor((sighTargetMs - 10000) / 16000);
                 for(let i = 0; i < sighCycles; i++) {
                     let cycle = MODES.sigh();
                     cycle.forEach(c => {
@@ -375,7 +375,7 @@
                 p.push({ id: 'base-trans-2', name: 'ПЕРЕХОД', duration: 10000, startFill: 0, endFill: 1, color: '#eab308', globalTitle: "Переход к Этапу 2", title: "Смена ритма", desc: "Дыхание выравнивается. Переходим к резонансному дыханию для балансировки нервной системы." });
                 accumulatedMs += 10000;
 
-                let hrvCycles = Math.floor((hrvTargetMs - 10000) / 10000); 
+                let hrvCycles = Math.floor((hrvTargetMs - 10000) / 10000);
                 for(let i = 0; i < hrvCycles; i++) {
                     let cycle = MODES.hrv(6.0);
                     cycle.forEach(c => {
@@ -499,8 +499,8 @@
             ],
             'full': (totalMs) => {
                 let is50 = totalMs <= 50 * 60 * 1000;
-                let baseTime = is50 ? 20 * 60000 : 40 * 60000; 
-                
+                let baseTime = is50 ? 20 * 60000 : 40 * 60000;
+
                 // Уменьшаем время Базы на 10 сек, чтобы компенсировать время перехода и ровно уложиться в 50/70 мин
                 let p1 = MODES.base(baseTime - 10000);
                 p1.forEach(c => {
@@ -511,7 +511,7 @@
                 p2.forEach(c => {
                     c.globalTitle = "ЧАСТЬ II (АРСЕНАЛ) | " + c.globalTitle;
                 });
-                
+
                 let trans = { id: 'full-trans', name: 'ПЕРЕХОД', duration: 10000, startFill: 0, endFill: 1, color: '#eab308', globalTitle: "СМЕНА БЛОКОВ", title: "Экватор тренировки", desc: "Базовая часть завершена. Переходим к продвинутым когнитивным и ментальным техникам Расширенного Арсенала." };
 
                 return p1.concat([trans]).concat(p2);
@@ -526,12 +526,12 @@
         const btnStart = document.getElementById('btn-start');
         const btnStop = document.getElementById('btn-stop');
         const btnReset = document.getElementById('btn-reset');
-        
+
         const modeTitle = document.getElementById('mode-title');
         const modeSubtitle = document.getElementById('mode-subtitle');
         const durationButtons = document.querySelectorAll('.duration-btn');
         const sessionTimeLeftText = document.getElementById('session-time-left');
-        
+
         const pmrInstructions = document.getElementById('pmr-instructions');
         const pmrGroupText = document.getElementById('pmr-group');
         const pmrActionText = document.getElementById('pmr-action');
@@ -542,7 +542,7 @@
         const arsenalSubmenu = document.getElementById('arsenal-submenu');
         const arsenalBtns = document.querySelectorAll('.arsenal-btn');
         const durationContainer = document.getElementById('duration-container');
-        
+
         // DOM Диктофона
         const recorderContainer = document.getElementById('recorder-container');
         const btnRecord = document.getElementById('btn-record');
@@ -551,9 +551,9 @@
         const recordingsList = document.getElementById('recordings-list');
 
         // Настройки таймера
-        let currentTrainingType = 'base'; 
-        let sessionLimitMs = 20 * 60000; 
-        
+        let currentTrainingType = 'base';
+        let sessionLimitMs = 20 * 60000;
+
         let phases = MODES.base(sessionLimitMs);
         let currentPhaseIndex = 0;
 
@@ -593,14 +593,14 @@
             if (type === 'arsenal' || type === 'arsenalAuto' || ['stopframe', 'act', 'rehearsal', 'yoganidra', 'cold', 'key'].includes(type)) {
                 activeTab = tabMainArsenal;
             }
-            
+
             activeTab.classList.replace('bg-slate-900', 'bg-sky-500');
             activeTab.classList.replace('text-slate-400', 'text-white');
             activeTab.classList.add('shadow-md');
 
             // Управление меню и кнопками времени
             durationButtons.forEach(b => b.classList.add('hidden'));
-            
+
             // Логика видимости диктофона
             if (activeTab === tabMainArsenal || activeTab === tabMainFull) {
                 recorderContainer.classList.remove('hidden');
@@ -609,22 +609,22 @@
                 recorderContainer.classList.add('hidden');
                 recorderContainer.classList.remove('flex');
             }
-            
+
             if (type === 'base') {
                 arsenalSubmenu.classList.add('hidden');
                 durationContainer.classList.remove('hidden');
                 document.querySelector('[data-mode="base"][data-duration="20"]').classList.remove('hidden');
                 document.querySelector('[data-mode="base"][data-duration="40"]').classList.remove('hidden');
-                
+
                 modeTitle.textContent = `Базовая подготовка`;
                 modeSubtitle.textContent = `Комплексная программа (4 этапа)`;
-                
+
                 if (sessionLimitMs !== 20*60000 && sessionLimitMs !== 40*60000) setDuration(20);
                 else setDuration(sessionLimitMs / 60000);
 
             } else if (activeTab === tabMainArsenal) {
                 arsenalSubmenu.classList.remove('hidden');
-                durationContainer.classList.add('hidden'); 
+                durationContainer.classList.add('hidden');
 
                 let actualMode = type === 'arsenal' ? 'arsenalAuto' : type;
 
@@ -640,17 +640,17 @@
 
                 if (actualMode === 'arsenalAuto') {
                     document.querySelector('[data-mode="arsenal"][data-duration="30"]').classList.remove('hidden');
-                    durationContainer.classList.remove('hidden'); 
+                    durationContainer.classList.remove('hidden');
 
                     const isColdTime = (new Date().getHours() >= 19 || new Date().getHours() < 9);
                     modeTitle.textContent = `Расширенный Арсенал`;
                     modeSubtitle.textContent = `Автоматическая программа (30 мин)`;
                     phases = MODES.arsenalAuto();
-                    setDuration(30); 
+                    setDuration(30);
                 } else {
                     phases = MODES[actualMode]();
-                    sessionLimitMs = 0; 
-                    
+                    sessionLimitMs = 0;
+
                     const titles = {
                         'stopframe': ['СТОП-КАДР', 'Когнитивное переструктурирование'],
                         'act': ['ACT-Разделение', 'Работа с парализующими мыслями'],
@@ -668,11 +668,11 @@
                 durationContainer.classList.remove('hidden');
                 document.querySelector('[data-mode="full"][data-duration="50"]').classList.remove('hidden');
                 document.querySelector('[data-mode="full"][data-duration="70"]').classList.remove('hidden');
-                
+
                 const isColdTime = (new Date().getHours() >= 19 || new Date().getHours() < 9);
                 modeTitle.textContent = `Максимум (База + Арсенал)`;
                 modeSubtitle.textContent = `Полная интеграция ` + (isColdTime ? `(+ Холод)` : ``);
-                
+
                 if (sessionLimitMs !== 50*60000 && sessionLimitMs !== 70*60000) setDuration(70);
                 else setDuration(sessionLimitMs / 60000);
             }
@@ -700,11 +700,11 @@
         // --- Обработчики кнопок ---
         function setDuration(minutes) {
             sessionLimitMs = minutes * 60 * 1000;
-            
+
             durationButtons.forEach(b => {
                 b.classList.remove('bg-sky-500', 'text-white', 'shadow-lg', 'shadow-sky-500/20');
                 b.classList.add('bg-slate-700', 'text-slate-300');
-                
+
                 if (b.dataset.mode === currentTrainingType || (currentTrainingType === 'arsenalAuto' && b.dataset.mode === 'arsenal')) {
                     if (parseInt(b.dataset.duration) === minutes) {
                         b.classList.remove('bg-slate-700', 'text-slate-300');
@@ -712,11 +712,11 @@
                     }
                 }
             });
-            
+
             if (currentTrainingType === 'base') phases = MODES.base(sessionLimitMs);
             else if (currentTrainingType === 'arsenalAuto') phases = MODES.arsenalAuto();
             else if (currentTrainingType === 'full') phases = MODES.full(sessionLimitMs);
-            
+
             resetTimer();
         }
 
@@ -725,28 +725,28 @@
                 setDuration(parseInt(e.target.dataset.duration));
             });
         });
-        
+
         // --- Логика диктофона ---
         btnRecord.addEventListener('click', async () => {
             if (!isVoiceRecording) {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     mediaRecorder = new MediaRecorder(stream);
-                    
+
                     mediaRecorder.ondataavailable = e => {
                         if (e.data.size > 0) audioChunks.push(e.data);
                     };
-                    
+
                     mediaRecorder.onstop = () => {
                         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                         audioChunks = [];
                         const audioUrl = URL.createObjectURL(audioBlob);
-                        
+
                         const audioEl = document.createElement('audio');
                         audioEl.controls = true;
                         audioEl.src = audioUrl;
                         audioEl.className = "w-full h-8";
-                        
+
                         const aEl = document.createElement('a');
                         aEl.href = audioUrl;
                         const dateStr = new Date().toLocaleTimeString().replace(/:/g, '-');
@@ -758,14 +758,14 @@
                         wrapper.className = "bg-slate-800 p-2 rounded-lg flex flex-col gap-2 items-end border border-slate-700";
                         wrapper.appendChild(audioEl);
                         wrapper.appendChild(aEl);
-                        
+
                         recordingsList.appendChild(wrapper);
                         recordingsList.classList.remove('hidden');
                     };
 
                     mediaRecorder.start();
                     isVoiceRecording = true;
-                    
+
                     recordText.textContent = "Остановить запись";
                     recordDot.classList.remove('hidden');
                     btnRecord.classList.replace('bg-rose-500', 'bg-slate-600');
@@ -779,7 +779,7 @@
                 mediaRecorder.stop();
                 mediaRecorder.stream.getTracks().forEach(track => track.stop());
                 isVoiceRecording = false;
-                
+
                 recordText.textContent = "Начать запись";
                 recordDot.classList.add('hidden');
                 btnRecord.classList.replace('bg-slate-600', 'bg-rose-500');
@@ -793,7 +793,7 @@
             if(!phase) return;
 
             const displayTime = Math.max(0, Math.min(elapsed, phase.duration));
-            
+
             // Динамическое обновление подзаголовка
             if (phase.globalTitle && modeSubtitle.textContent !== phase.globalTitle) {
                 modeSubtitle.textContent = phase.globalTitle;
@@ -801,7 +801,7 @@
 
             // Форматирование времени
             const timeLeft = phase.duration - displayTime;
-            
+
             if (timeLeft >= 60000) {
                 const m = Math.floor(timeLeft / 60000);
                 const s = Math.floor((timeLeft % 60000) / 1000);
@@ -809,14 +809,14 @@
             } else {
                 timeText.textContent = Math.ceil(timeLeft / 1000).toString();
             }
-            
+
             // Инструкции
             if (isRunning || pausedElapsedTime > 0) {
                 if (phase.title || phase.desc) {
                     pmrGroupText.textContent = phase.title || '';
                     pmrActionText.textContent = phase.desc || '';
                 }
-                
+
                 if (phaseText.textContent !== phase.name) {
                     phaseText.textContent = phase.name;
                     phaseText.style.color = phase.color;
@@ -824,11 +824,11 @@
             }
 
             const progress = displayTime / phase.duration;
-            
+
             // Интерполяция заполнения кольца
             const currentFill = phase.startFill + (phase.endFill - phase.startFill) * progress;
             const offset = circumference - (currentFill * circumference);
-            
+
             circle.style.strokeDashoffset = offset;
             circle.style.stroke = (isRunning || pausedElapsedTime > 0) ? phase.color : '#334155';
         }
@@ -865,18 +865,18 @@
                 const overshot = elapsed - currentPhaseDef.duration;
                 startTime = timestamp - overshot;
                 elapsed = overshot;
-                
+
                 currentPhaseIndex++;
-                
+
                 // Проверка завершения
                 if (currentPhaseIndex >= phases.length) {
-                    currentPhaseIndex = phases.length - 1; 
+                    currentPhaseIndex = phases.length - 1;
                     updateUI(currentPhaseDef.duration);
                     stopTimer();
                     phaseText.textContent = "ЗАВЕРШЕНО";
                     phaseText.style.color = '#10b981';
                     circle.style.stroke = '#10b981';
-                    
+
                     pmrGroupText.textContent = "Тренировка окончена";
                     pmrActionText.textContent = "Отличная работа! Данные сохранены в ваш нейронный профиль.";
                     return;
@@ -891,13 +891,13 @@
         function startTimer() {
             if (isRunning) return;
             isRunning = true;
-            startTime = 0; 
-            
+            startTime = 0;
+
             btnStart.disabled = true;
             btnStart.classList.replace('bg-sky-500', 'bg-slate-700');
             btnStart.classList.replace('hover:bg-sky-400', 'hover:bg-slate-600');
             btnStart.classList.remove('shadow-sky-500/30');
-            
+
             btnStop.disabled = false;
             btnStop.classList.replace('bg-slate-600', 'bg-rose-500');
             btnStop.classList.replace('hover:bg-slate-500', 'hover:bg-rose-400');
@@ -910,7 +910,7 @@
             if (!isRunning) return;
             isRunning = false;
             cancelAnimationFrame(animationFrameId);
-            
+
             let currentElapsed = (performance.now() - startTime);
             if(startTime === 0) currentElapsed = pausedElapsedTime;
             pausedElapsedTime = currentElapsed;
@@ -935,7 +935,7 @@
             currentPhaseIndex = 0;
             totalSessionTime = 0;
             lastFrameTime = 0;
-            
+
             if (sessionLimitMs > 0) {
                 const minutes = Math.floor(sessionLimitMs / 60000);
                 sessionTimeLeftText.textContent = `Осталось: ${minutes}:00`;
@@ -964,7 +964,7 @@
             btnStop.classList.replace('bg-rose-500', 'bg-slate-600');
             btnStop.classList.replace('hover:bg-rose-400', 'hover:bg-slate-500');
             btnStop.classList.remove('shadow-rose-500/30');
-            
+
             timerBox.classList.remove('pulse-animation');
         }
 
@@ -973,7 +973,7 @@
         btnReset.addEventListener('click', resetTimer);
 
         // Инициализация
-        setTrainingType('base'); 
+        setTrainingType('base');
     </script>
 </body>
 </html>

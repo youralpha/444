@@ -45,12 +45,12 @@
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #10b981; }
-        
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .modal-overlay { animation: fadeIn 0.2s ease-out forwards; }
         .modal-content { animation: slideUp 0.3s ease-out forwards; }
-        
+
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
 
@@ -74,11 +74,11 @@
 
     <header class="mb-6 cyber-border bg-tactical-800 p-4 md:p-6 rounded-sm shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all relative overflow-hidden">
         <div class="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-tactical-900/50 to-transparent pointer-events-none"></div>
-        
+
         <div class="flex-1">
             <h1 class="text-2xl md:text-3xl font-bold tracking-widest text-tactical-accent font-mono uppercase">ПЕРИМЕТР v4.0</h1>
             <p class="text-sm text-gray-400 mt-1 uppercase tracking-wider">Система профессионального доминирования | Объект: Тимофей</p>
-            
+
             <!-- Статус Агента 4444 -->
             <div class="mt-4 flex items-center gap-3">
                 <div class="bg-tactical-900 border border-tactical-700 px-3 py-1.5 rounded flex items-center shadow-inner">
@@ -112,9 +112,9 @@
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 flex-grow">
-        
+
         <main class="lg:col-span-2 flex flex-col gap-6">
-            
+
             <!-- ГЛАВНЫЙ ЭКРАН: МИССИЯ И ФОКУС ДНЯ -->
             <div class="cyber-border bg-tactical-800 p-4 md:p-6 rounded-sm shadow-md flex flex-col gap-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -125,7 +125,7 @@
                         </label>
                         <textarea id="main-mission" onblur="saveFocusData()" rows="4" class="w-full bg-tactical-900/50 border border-tactical-700 rounded p-3 text-sm text-gray-200 focus:border-tactical-accent focus:bg-tactical-900 outline-none custom-scrollbar transition-all resize-none" placeholder="КТО: [я]&#10;ЧТО: [конкретное достижение]&#10;КОГДА: [дедлайн]&#10;ЗАЧЕМ: [эффект]"></textarea>
                     </div>
-                    
+
                     <div class="flex flex-col space-y-2 relative">
                         <label class="text-xs font-bold text-orange-400 uppercase tracking-widest flex justify-between items-center border-b border-tactical-700 pb-1">
                             <span>Три Пули (Фокус дня)</span>
@@ -175,7 +175,7 @@
                     </div>
                     <button onclick="savePlanData()" class="px-4 py-2 bg-blue-500 text-white font-bold text-sm rounded shadow-[0_0_10px_rgba(59,130,246,0.3)] hover:bg-blue-400 transition-colors w-full sm:w-auto">Сохранить правки</button>
                 </div>
-                
+
                 <div class="bg-tactical-800 p-4 md:p-6 rounded-sm border border-tactical-700 space-y-4">
                     <h3 class="text-md font-bold text-tactical-accent uppercase tracking-wide border-b border-tactical-700 pb-2">Фаза 0: Рекогносцировка себя (H2F)</h3>
                     <textarea id="plan-phase0" rows="12" onblur="savePlanData()" class="w-full bg-tactical-900 border border-tactical-700 rounded p-4 text-sm text-gray-200 focus:border-tactical-accent focus:ring-1 focus:ring-tactical-accent outline-none custom-scrollbar leading-relaxed"></textarea>
@@ -190,7 +190,7 @@
         </main>
 
         <aside class="flex flex-col gap-6">
-            
+
             <div class="cyber-border bg-tactical-800 p-4 md:p-6 rounded-sm">
                 <h2 class="text-lg font-bold text-white mb-4 uppercase tracking-wider border-b border-tactical-700 pb-2">Оперативный Календарь</h2>
                 <div class="flex justify-between items-center mb-4">
@@ -365,7 +365,7 @@
             {
                 id: 'daily', title: 'Ежедневно', color: 'text-tactical-accent',
                 tasks: [
-                    { 
+                    {
                         id: 'd1', text: 'Утренний оперативный брифинг (ПОЛНЫЙ SAS)', time: '15 мин',
                         description: `<p class="mb-2"><b>SAS (Situational Awareness Sync)</b> — проактивная синхронизация с миссией.</p>`,
                         fields: [
@@ -381,16 +381,16 @@
                     { id: 'd2', text: 'OODA Loop (Цикл Бойда)', time: 'В моменте', description: '<p>Наблюдай → Ориентируйся → Решай → Действуй.</p>', fields: [{ id: 'ooda_count', label: 'Циклов за день', type: 'number' }, { id: 'ooda_decision', label: 'Ключевое решение', type: 'textarea' }] },
                     { id: 'd4', text: 'Физиологический чек (H2F)', time: '2 мин', fields: [{ id: 'sleep', label: 'Сон (1-10)', type: 'number' }, { id: 'energy', label: 'Энергия (1-10)', type: 'number' }, { id: 'focus', label: 'Фокус (1-10)', type: 'number' }] },
                     { id: 'd5', text: 'Teach-Back изученного', time: '15 мин', fields: [{ id: 'learned', label: 'Что понято?', type: 'textarea' }, { id: 'explained', label: 'Кому?', type: 'input' }] },
-                    { 
-                        id: 'd6', text: 'EOD Дебрифинг (Протокол Отбоя)', time: '10 мин', 
+                    {
+                        id: 'd6', text: 'EOD Дебрифинг (Протокол Отбоя)', time: '10 мин',
                         description: `
                             <p class="mb-2"><b>End of Day (EOD) Debrief</b> — ритуал закрытия оперативного дня и отключения психики.</p>
-                        `, 
+                        `,
                         fields: [
-                            { id: 'eod_dump', label: '1. BRAIN DUMP (Сброс мыслей)', type: 'textarea', placeholder: 'Что осталось висеть в голове? Выгрузи это сюда, чтобы не думать ночью.' }, 
-                            { id: 'eod_aar', label: '2. МИКРО-AAR', type: 'textarea', placeholder: 'Выполнено ли утреннее WISH? Если нет, то почему (без оправданий)?' }, 
+                            { id: 'eod_dump', label: '1. BRAIN DUMP (Сброс мыслей)', type: 'textarea', placeholder: 'Что осталось висеть в голове? Выгрузи это сюда, чтобы не думать ночью.' },
+                            { id: 'eod_aar', label: '2. МИКРО-AAR', type: 'textarea', placeholder: 'Выполнено ли утреннее WISH? Если нет, то почему (без оправданий)?' },
                             { id: 'eod_win', label: '3. ДОФАМИНОВАЯ ФИКСАЦИЯ', type: 'input', placeholder: 'Главная победа дня (даже микро-шаг)' }
-                        ] 
+                        ]
                     }
                 ]
             },
@@ -432,9 +432,9 @@
             phase1: `• МИШЕНЬ: Заказчики частных домов (эконом/премиум).\n• ПРОДУКТ-ТАРАН: Дизайн/проектирование.\n• СОЮЗНИКИ: Елена (Брокер), Андрей (Строитель), Олег (Строитель), Руслан (Нетворкер).`
         };
 
-        const STORAGE_KEY = 'perimeter_state_v14'; 
+        const STORAGE_KEY = 'perimeter_state_v14';
         const START_DATE = '2026-04-03';
-        
+
         let state = { currentDate: START_DATE, score: 0, history: {}, network: [], cycles: [], plan: {} };
 
         // UTILS
@@ -474,7 +474,7 @@
                 document.getElementById('death-screen').classList.remove('hidden');
             } else {
                 document.getElementById('death-screen').classList.add('hidden');
-                
+
                 if (state.score >= 30) {
                     comms.innerText = "Агент 4444: Работаем чисто. Противник не успевает за нашим OODA-циклом.";
                     comms.className = "text-xs font-mono text-emerald-400 max-w-xs md:max-w-md italic border-l-2 border-emerald-500 pl-3";
@@ -488,12 +488,12 @@
             }
         }
 
-        function saveState() { 
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); 
-            document.getElementById('sync-status').innerText = 'Сохранение...'; 
-            setTimeout(() => { document.getElementById('sync-status').innerText = 'Синхронизировано'; }, 500); 
+        function saveState() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            document.getElementById('sync-status').innerText = 'Сохранение...';
+            setTimeout(() => { document.getElementById('sync-status').innerText = 'Синхронизировано'; }, 500);
         }
-        
+
         function loadState() {
             const saved = localStorage.getItem(STORAGE_KEY);
             let parsedState = null;
@@ -509,7 +509,7 @@
                 state = parsedState;
                 if (typeof state.score === 'undefined') state.score = 0;
                 if (!state.plan) state.plan = JSON.parse(JSON.stringify(initialPlan));
-                
+
                 const dailyCycle = state.cycles.find(c => c.id === 'daily');
                 if (dailyCycle) {
                     const hasEOD = dailyCycle.tasks.some(t => t.id === 'd6');
@@ -588,7 +588,7 @@
             document.getElementById('header-selected-date').innerText = d.split('-').reverse().join('.');
             document.getElementById('progress-date-label').innerText = d.split('-').reverse().join('.');
             document.getElementById('focus-date-label').innerText = "На: " + d.split('-').reverse().join('.');
-            
+
             // Загрузка фокуса
             document.getElementById('main-mission').value = state.plan.mission || '';
             const dayData = state.history[d] || { taskData: {} };
@@ -610,13 +610,13 @@
 
         function saveFocusData() {
             state.plan.mission = document.getElementById('main-mission').value;
-            
+
             if (!state.history[state.currentDate]) state.history[state.currentDate] = { completedTasks: [], taskData: {} };
             if (!state.history[state.currentDate].taskData['d1']) state.history[state.currentDate].taskData['d1'] = {};
-            
+
             state.history[state.currentDate].taskData['d1'].sas_bullets = document.getElementById('main-bullets').value;
             state.history[state.currentDate].taskData['d1'].sas_mission = document.getElementById('main-mission').value;
-            
+
             saveState();
             showToast("Фокус и Миссия синхронизированы");
         }
@@ -642,10 +642,10 @@
             document.getElementById('modal-subtitle').innerText = "Норматив: " + task.time;
             document.getElementById('modal-date-indicator').innerText = state.currentDate;
             document.getElementById('modal-description').innerHTML = task.description || "<i>Инструкция не задана</i>";
-            
+
             const form = document.getElementById('modal-form'); form.innerHTML = '';
             const data = (state.history[state.currentDate] || { taskData: {} }).taskData[tid] || {};
-            
+
             // Если это d1, подтягиваем свежие данные с главного экрана
             if (tid === 'd1') {
                 data.sas_mission = state.plan.mission || '';
@@ -665,20 +665,20 @@
         }
 
         function closeModal() { document.getElementById('modal-container').classList.add('hidden'); }
-        
+
         function saveModalData() {
             if (!currentTaskId) return;
             if (!state.history[state.currentDate]) state.history[state.currentDate] = { completedTasks: [], taskData: {} };
             const day = state.history[state.currentDate];
             if (!day.taskData[currentTaskId]) day.taskData[currentTaskId] = {};
-            
+
             let task = null; state.cycles.forEach(c => c.tasks.forEach(t => { if(t.id === currentTaskId) task = t; }));
             (task.fields || []).forEach(f => {
                 day.taskData[currentTaskId][f.id] = document.getElementById("field-" + f.id).value;
             });
-            
+
             if (!day.completedTasks.includes(currentTaskId)) day.completedTasks.push(currentTaskId);
-            
+
             // Если обновили d1 в модалке - обновляем глобальную миссию
             if (currentTaskId === 'd1') {
                 state.plan.mission = day.taskData['d1'].sas_mission;
@@ -754,7 +754,7 @@
         function openAssetModal(aid) {
             const isNew = aid === 'new';
             const a = isNew ? { id: 'n'+Date.now(), links: [] } : state.network.find(x => x.id === aid);
-            
+
             document.getElementById('asset-id').value = a.id;
             document.getElementById('asset-name').value = a.name || '';
             document.getElementById('asset-callsign').value = a.callsign || '';
@@ -764,7 +764,7 @@
             document.getElementById('asset-last-date').value = a.lastDate || '';
             document.getElementById('asset-next-date').value = a.nextDate || '';
             document.getElementById('asset-notes').value = a.notes || '';
-            
+
             document.getElementById('asset-m').value = a.m || '';
             document.getElementById('asset-i').value = a.i || '';
             document.getElementById('asset-c').value = a.c || '';
@@ -774,7 +774,7 @@
 
             tempLinks = [...(a.links || [])];
             updateLinksUI();
-            
+
             document.getElementById('btn-delete-asset').classList.toggle('hidden', isNew);
             document.getElementById('asset-modal-container').classList.remove('hidden');
         }
@@ -796,15 +796,15 @@
         function saveAssetData() {
             const id = document.getElementById('asset-id').value;
             const asset = {
-                id: id, 
-                name: document.getElementById('asset-name').value.trim(), 
+                id: id,
+                name: document.getElementById('asset-name').value.trim(),
                 callsign: document.getElementById('asset-callsign').value.trim(),
-                role: document.getElementById('asset-role').value.trim(), 
+                role: document.getElementById('asset-role').value.trim(),
                 circle: document.getElementById('asset-circle').value,
-                contact: document.getElementById('asset-contact').value.trim(), 
+                contact: document.getElementById('asset-contact').value.trim(),
                 lastDate: document.getElementById('asset-last-date').value,
                 nextDate: document.getElementById('asset-next-date').value,
-                notes: document.getElementById('asset-notes').value.trim(), 
+                notes: document.getElementById('asset-notes').value.trim(),
                 m: document.getElementById('asset-m').value.trim(),
                 i: document.getElementById('asset-i').value.trim(),
                 c: document.getElementById('asset-c').value.trim(),
@@ -817,7 +817,7 @@
             const oldData = state.network.find(a => a.id === id);
             const oldLinks = oldData ? (oldData.links || []) : [];
             const removedLinks = oldLinks.filter(oldId => !tempLinks.includes(oldId));
-            
+
             removedLinks.forEach(linkId => {
                 const linkedAsset = state.network.find(a => a.id === linkId);
                 if (linkedAsset && linkedAsset.links) {
@@ -835,7 +835,7 @@
 
             const idx = state.network.findIndex(x => x.id === id);
             if(idx > -1) state.network[idx] = asset; else state.network.push(asset);
-            
+
             saveState(); updateFullUI(); closeAssetModal(); showToast("Досье сохранено");
         }
 
@@ -873,46 +873,46 @@
 
         function renderCalendar() {
             const calendarGrid = document.getElementById('calendar-grid');
-            if (!calendarGrid) return; 
+            if (!calendarGrid) return;
             calendarGrid.innerHTML = '';
-            
+
             const daysInMonth = 30;
             const startDayOffset = 2; // Апрель 2026 начинается со среды (2 пустые ячейки: ПН, ВТ)
-            
+
             for (let i = 0; i < startDayOffset; i++) {
                 calendarGrid.innerHTML += `<div class="p-2"></div>`;
             }
-            
+
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateStr = `2026-04-${String(day).padStart(2, '0')}`;
                 const isSelected = state.currentDate === dateStr;
                 const hasData = state.history[dateStr] && state.history[dateStr].completedTasks && state.history[dateStr].completedTasks.length > 0;
-                
+
                 let cellClasses = "p-2 m-0.5 rounded border flex flex-col items-center justify-center relative cursor-pointer transition-colors ";
                 const isSunday = (day + startDayOffset) % 7 === 0;
-                
+
                 if (isSelected) {
                     cellClasses += "bg-tactical-accent border-tactical-accent text-tactical-900 font-bold shadow-[0_0_10px_rgba(16,185,129,0.5)] scale-105 ";
                 } else {
-                    if (isSunday) cellClasses += "text-red-400 border-transparent hover:bg-tactical-700 hover:border-tactical-600 "; 
+                    if (isSunday) cellClasses += "text-red-400 border-transparent hover:bg-tactical-700 hover:border-tactical-600 ";
                     else cellClasses += "text-gray-300 border-transparent hover:bg-tactical-700 hover:border-tactical-600 ";
                 }
 
                 let innerHtml = `<span>${day}</span>`;
                 let markers = `<div class="absolute bottom-1 flex gap-1">`;
-                
+
                 if (hasData) {
                     let dotColor = isSelected ? 'bg-tactical-900' : 'bg-emerald-300 shadow-[0_0_5px_rgba(110,231,183,0.8)]';
                     markers += `<span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>`;
                 }
-                
+
                 if (isSunday) {
                     let sunColor = isSelected ? 'bg-tactical-900' : 'bg-blue-500';
                     markers += `<span class="w-1.5 h-1.5 rounded-full ${sunColor}"></span>`;
                 }
 
                 markers += `</div>`;
-                
+
                 calendarGrid.innerHTML += `
                     <div class="${cellClasses} h-12 md:h-14" onclick="selectDate(${day})">
                         ${innerHtml}
