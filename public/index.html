@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ПЕРИМЕТР | Оперативный Дашборд КПТ</title>
+    <!-- Using Tailwind via CDN, but for strict offline you'd compile it. Assuming local dev. -->
+    <script src="tailwindcss.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        tactical: {
+                            900: '#0f172a',
+                            800: '#1e293b',
+                            700: '#334155',
+                            accent: '#10b981', // Emerald 500
+                            alert: '#ef4444',  // Red 500
+                            text: '#f8fafc',
+                            khaki: '#8b9467' // military khaki hint
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js for dashboard charts (Assuming cached or included in local build) -->
+    <script src="chart.js"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: 'Courier New', monospace; /* strict monospace */
+        }
+        .cyber-border {
+            border: 1px solid #334155;
+            position: relative;
+            background-color: rgba(30, 41, 59, 0.7);
+        }
+        .cyber-border::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 10px; height: 10px;
+            border-top: 2px solid #8b9467; border-left: 2px solid #8b9467;
+        }
+        .cyber-border::after {
+            content: ''; position: absolute; bottom: 0; right: 0; width: 10px; height: 10px;
+            border-bottom: 2px solid #8b9467; border-right: 2px solid #8b9467;
+        }
+        .checkbox-custom:checked + div { background-color: #8b9467; border-color: #8b9467; }
+        .checkbox-custom:checked + div svg { display: block; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #8b9467; }
+
+        .nav-btn {
+            display: block;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+            color: #94a3b8;
+            text-transform: uppercase;
+            font-weight: bold;
+            font-size: 0.875rem;
+            letter-spacing: 0.05em;
+        }
+        .nav-btn:hover {
+            background-color: #1e293b;
+            color: #f8fafc;
+            border-left-color: #475569;
+        }
+        .nav-btn.active {
+            background-color: #1e293b;
+            color: #8b9467;
+            border-left-color: #8b9467;
+        }
+
+        input, select, textarea {
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            color: #f8fafc;
+            padding: 0.5rem;
+            font-family: inherit;
+            width: 100%;
+            outline: none;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #8b9467;
+        }
+        .btn-action {
+            background-color: #334155;
+            color: #f8fafc;
+            border: 1px solid #475569;
+            padding: 0.5rem 1rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .btn-action:hover {
+            background-color: #475569;
+            border-color: #8b9467;
+        }
+        .btn-submit {
+            background-color: #8b9467;
+            color: #0f172a;
+            border: none;
+        }
+        .btn-submit:hover {
+            background-color: #a3ad7a;
+        }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { border: 1px solid #334155; padding: 0.5rem; text-align: left; }
+        th { background-color: #1e293b; color: #8b9467; }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        .terminal-header {
+            border-bottom: 2px solid #334155;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #8b9467;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: blink 2s infinite;
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-tactical-900 border-r border-tactical-700 flex flex-col z-20 shrink-0">
+        <div class="p-4 border-b border-tactical-700">
+            <h1 class="text-xl font-bold tracking-widest text-tactical-text">
+                <span class="text-tactical-khaki">SYS</span>.ПЕРИМЕТР
+            </h1>
+            <div class="text-xs text-tactical-700 mt-1">ОПЕРАТИВНЫЙ ПРОТОКОЛ КПТ</div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-4 space-y-1">
+            <button class="nav-btn active" data-target="dashboard">
+                [01] Дашборд / Курс
+            </button>
+            <button class="nav-btn" data-target="mood">
+                [02] Дневник Активности
+            </button>
+            <button class="nav-btn" data-target="abc">
+                [03] Записи ABC (СМЭП)
+            </button>
+            <button class="nav-btn" data-target="restructuring">
+                [04] Переоценка Мыслей
+            </button>
+            <button class="nav-btn" data-target="experiments">
+                [05] Поведенческие Эксперименты
+            </button>
+            <button class="nav-btn" data-target="exposures">
+                [06] Иерархия Экспозиций
+            </button>
+            <button class="nav-btn" data-target="breathing">
+                [07] Дыхание / Релаксация
+            </button>
+            <a href="perimetr.html" class="nav-btn block text-tactical-accent border-tactical-accent mt-4 bg-tactical-800">
+                [08] СИСТЕМА ПЕРИМЕТР
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-tactical-700 text-xs text-tactical-700 text-center">
+            V 4.0 // OFFLINE READY
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-tactical-900 overflow-y-auto p-6 relative">
+        <div class="max-w-5xl mx-auto space-y-6">
+
+            <!-- DASHBOARD SECTION -->
+            <section id="dashboard" class="section active cyber-border p-6">
+                <div class="terminal-header">
+                    <h2 class="text-2xl font-bold text-tactical-text tracking-wider uppercase">
+                        <span class="status-indicator"></span>Оперативная Сводка
+                    </h2>
+                    <div class="text-sm text-tactical-khaki" id="current-week-display">НЕДЕЛЯ: ЗАГРУЗКА...</div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Week Info -->
+                    <div class="lg:col-span-2 cyber-border p-4 bg-tactical-800">
+                        <h3 class="text-tactical-khaki font-bold border-b border-tactical-700 pb-2 mb-4" id="week-title">Загрузка данных программы...</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <span class="text-xs text-tactical-700 block mb-1">ЦЕЛИ ЭТАПА:</span>
+                                <div id="week-goals" class="text-sm"></div>
+                            </div>
+                            <div>
+                                <span class="text-xs text-tactical-700 block mb-1">ДИРЕКТИВЫ (СОДЕРЖАНИЕ):</span>
+                                <div id="week-content" class="text-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tasks -->
+                    <div class="cyber-border p-4 bg-tactical-800 flex flex-col h-full">
+                        <h3 class="text-tactical-khaki font-bold border-b border-tactical-700 pb-2 mb-4">ЗАДАЧИ НА НЕДЕЛЮ</h3>
+                        <ul id="week-tasks" class="space-y-2 flex-1 overflow-y-auto text-sm">
+                            <!-- Tasks populated by JS -->
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MOOD SECTION -->
+            <section id="mood" class="section cyber-border p-6">
+                <div class="terminal-header">
+                    <h2 class="text-xl font-bold uppercase"><span class="status-indicator"></span>Дневник активности и настроения</h2>
+                </div>
+
+                <form id="mood-form" class="space-y-4 mb-8 bg-tactical-800 p-4 border border-tactical-700">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-tactical-700 mb-1">ДАТА</label>
+                            <input type="date" id="mood-date" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-tactical-700 mb-1">АКТИВНОСТЬ</label>
+                            <input type="text" id="mood-activity" placeholder="Что делал?" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-tactical-700 mb-1">НАСТРОЕНИЕ ДО (0-10)</label>
+                            <input type="number" id="mood-before" min="0" max="10" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-tactical-700 mb-1">НАСТРОЕНИЕ ПОСЛЕ (0-10)</label>
+                            <input type="number" id="mood-after" min="0" max="10" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-tactical-700 mb-1">ЗАМЕТКИ</label>
+                        <textarea id="mood-notes" rows="2" placeholder="Что повлияло?"></textarea>
+                    </div>
+                    <button type="submit" class="btn-action btn-submit w-full">ЗАПИСАТЬ В БАЗУ</button>
+                </form>
+
+                <div class="overflow-x-auto">
+                    <table id="mood-table">
+                        <thead><tr><th>ДАТА</th><th>АКТИВНОСТЬ</th><th>ДО</th><th>ПОСЛЕ</th><th>ЗАМЕТКИ</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ABC SECTION -->
+            <section id="abc" class="section cyber-border p-6">
+                <div class="terminal-header">
+                    <h2 class="text-xl font-bold uppercase"><span class="status-indicator"></span>Запись автоматических мыслей (ABC)</h2>
+                </div>
+
+                <form id="abc-form" class="space-y-4 mb-8 bg-tactical-800 p-4 border border-tactical-700">
+                    <div>
+                        <label class="block text-xs text-tactical-700 mb-1">ДАТА</label>
+                        <input type="date" id="abc-date" required class="w-1/3">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-tactical-khaki mb-1">A. СИТУАЦИЯ</label>
+                            <textarea id="abc-situation" rows="2" placeholder="Что произошло? Где? С кем?" required></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-tactical-khaki mb-1">B. МЫСЛЬ</label>
+                            <textarea id="abc-thought" rows="2" placeholder="Что пронеслось в голове?" required></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-tactical-khaki mb-1">C1. ЭМОЦИЯ</label>
+                            <input type="text" id="abc-emotion" placeholder="Эмоция и интенсивность 0-100%" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-tactical-khaki mb-1">C2. ПОВЕДЕНИЕ</label>
+                            <input type="text" id="abc-behavior" placeholder="Что я сделал? Ощущения в теле?">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-tactical-alert mb-1">ИСКАЖЕНИЯ (Чек-лист)</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm" id="distortions-checkboxes">
+                            <label class="flex items-center space-x-2"><input type="checkbox" value="Катастрофизация"> <span>Катастрофизация</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" value="Чтение мыслей"> <span>Чтение мыслей</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" value="Предсказание"> <span>Предсказание</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" value="Черно-белое"> <span>Черно-белое</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" value="Долженствование"> <span>Долженствование</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" value="Обесценивание"> <span>Обесценивание</span></label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-action btn-submit w-full">СОХРАНИТЬ ПРОТОКОЛ</button>
+                </form>
+
+                <div class="overflow-x-auto">
+                    <table id="abc-table">
+                        <thead><tr><th>ДАТА</th><th>СИТУАЦИЯ</th><th>МЫСЛЬ</th><th>ЭМОЦИЯ</th><th>ПОВЕДЕНИЕ</th><th>ИСКАЖЕНИЯ</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- RESTRUCTURING SECTION -->
+            <section id="restructuring" class="section cyber-border p-6">
+                <div class="terminal-header">
+                    <h2 class="text-xl font-bold uppercase"><span class="status-indicator"></span>Когнитивная реструктуризация</h2>
+                </div>
+
+                <form id="restructuring-form" class="space-y-4 mb-8 bg-tactical-800 p-4 border border-tactical-700">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-tactical-700 mb-1">ДАТА</label>
+                            <input type="date" id="rest-date" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-tactical-alert mb-1">ГОРЯЧАЯ МЫСЛЬ</label>
+                        <textarea id="rest-thought" rows="2" required></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-tactical-khaki mb-1">ДОКАЗАТЕЛЬСТВА ЗА</label>
+                            <textarea id="rest-for" rows="3" required></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-tactical-khaki mb-1">ДОКАЗАТЕЛЬСТВА ПРОТИВ</label>
+                            <textarea id="rest-against" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-tactical-accent mb-1">АЛЬТЕРНАТИВНАЯ МЫСЛЬ (Сбалансированная)</label>
+                        <textarea id="rest-alt" rows="2" required></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-tactical-700 mb-1">ЭМОЦИЯ ДО (0-100%)</label>
+                            <input type="number" id="rest-emo-before" min="0" max="100" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-tactical-700 mb-1">ЭМОЦИЯ ПОСЛЕ (0-100%)</label>
+                            <input type="number" id="rest-emo-after" min="0" max="100" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-action btn-submit w-full">ПЕРЕЗАПИСАТЬ</button>
+                </form>
+
+                <div class="overflow-x-auto">
+                    <table id="rest-table">
+                        <thead><tr><th>ДАТА</th><th>МЫСЛЬ</th><th>ЗА</th><th>ПРОТИВ</th><th>АЛЬТЕРНАТИВА</th><th>ЭМОЦИЯ (ДО->ПОСЛЕ)</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- EXPERIMENTS SECTION -->
+            <section id="experiments" class="section cyber-border p-6">
+                 <div class="terminal-header">
+                    <h2 class="text-xl font-bold uppercase"><span class="status-indicator"></span>План поведенческих экспериментов</h2>
+                </div>
+
+                <form id="exp-form" class="space-y-4 mb-8 bg-tactical-800 p-4 border border-tactical-700">
+                    <div>
+                        <label class="block text-xs text-tactical-700 mb-1">ДАТА ПЛАНА/ВЫПОЛНЕНИЯ</label>
+                        <input type="date" id="exp-date" required class="w-1/3">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-tactical-khaki mb-1">ЧТО Я СДЕЛАЮ? (ЭКСПЕРИМЕНТ)</label>
+                        <textarea id="exp-action" rows="2" required></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-tactical-alert mb-1">ПРЕДСКАЗАНИЕ (ЧТО СЛУЧИТСЯ ХУДШЕГО?)</label>
+                        <textarea id="exp-prediction" rows="2" required></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-tactical-khaki mb-1">ФАКТИЧЕСКИЙ РЕЗУЛЬТАТ</label>
+                        <textarea id="exp-result" rows="2"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-tactical-accent mb-1">ВЫВОД (ЧТО Я УЗНАЛ?)</label>
+                        <textarea id="exp-conclusion" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn-action btn-submit w-full">ФИКСИРОВАТЬ РЕЗУЛЬТАТ</button>
+                </form>
+
+                <div class="overflow-x-auto">
+                    <table id="exp-table">
+                        <thead><tr><th>ДАТА</th><th>ЭКСПЕРИМЕНТ</th><th>ПРЕДСКАЗАНИЕ</th><th>РЕЗУЛЬТАТ</th><th>ВЫВОД</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- EXPOSURES SECTION -->
+            <section id="exposures" class="section cyber-border p-6">
+                <div class="terminal-header">
+                    <h2 class="text-xl font-bold uppercase"><span class="status-indicator"></span>Иерархия экспозиций (0-100 SUDS)</h2>
+                </div>
+
+                <form id="exposures-form" class="space-y-4 mb-8 bg-tactical-800 p-4 border border-tactical-700 flex items-end gap-4">
+                    <div class="flex-1">
+                        <label class="block text-xs text-tactical-700 mb-1">ПУГАЮЩАЯ СИТУАЦИЯ</label>
+                        <input type="text" id="expo-sit" required>
+                    </div>
+                    <div class="w-32">
+                        <label class="block text-xs text-tactical-700 mb-1">ОЖИД. СТРАХ</label>
+                        <input type="number" id="expo-suds-exp" min="0" max="100" required placeholder="0-100">
+                    </div>
+                    <button type="submit" class="btn-action btn-submit">ДОБАВИТЬ В ИЕРАРХИЮ</button>
+                </form>
+
+                <div class="overflow-x-auto">
+                    <table id="expo-table">
+                        <thead><tr><th>УРОВЕНЬ УГРОЗЫ (ОЖИДАЕМЫЙ)</th><th>СИТУАЦИЯ</th><th>ФАКТИЧЕСКИЙ СТРАХ</th><th>СТАТУС</th><th>ДЕЙСТВИЕ</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- BREATHING SECTION -->
+            <section id="breathing" class="section cyber-border p-6 text-center">
+                 <div class="terminal-header">
+                    <h2 class="text-xl font-bold uppercase"><span class="status-indicator"></span>Дыхание / Релаксация</h2>
+                </div>
+                <div class="py-10">
+                    <p class="text-tactical-700 mb-6">[МОДУЛЬ В РАЗРАБОТКЕ - ССЫЛКА НА ВНЕШНИЙ ИНСТРУМЕНТ BASE.HTML]</p>
+                    <a href="BASE.html" target="_blank" class="btn-action inline-block">ИНИЦИИРОВАТЬ ПРОТОКОЛ ДЫХАНИЯ</a>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
